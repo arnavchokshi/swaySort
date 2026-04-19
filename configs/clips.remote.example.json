@@ -1,0 +1,14 @@
+{
+  "_doc": "Reproducible clip manifest for the A10 benchmark, used after scripts/sync_to_a10.sh has rsync'd the 9 clip directories to /home/ubuntu/clips/. Copy to configs/clips.json on the A10 (or pass --clips-manifest configs/clips.remote.example.json) before running scripts/run_full_benchmark.py.",
+  "clips": [
+    {"name": "easyTest",    "video": "/home/ubuntu/clips/easyTest/IMG_2082.mov"},
+    {"name": "gymTest",     "video": "/home/ubuntu/clips/gymTest/IMG_8309.mov"},
+    {"name": "BigTest",     "video": "/home/ubuntu/clips/BigTest/BigTest.mov"},
+    {"name": "adiTest",     "video": "/home/ubuntu/clips/adiTest/IMG_1649.mov"},
+    {"name": "mirrorTest",  "video": "/home/ubuntu/clips/mirrorTest/IMG_2946.MP4"},
+    {"name": "shorterTest", "video": "/home/ubuntu/clips/shorterTest/TestVideo.mov"},
+    {"name": "darkTest",    "video": "/home/ubuntu/clips/darkTest/darkTest.mov"},
+    {"name": "MotionTest",  "video": "/home/ubuntu/clips/MotionTest/IMG_4716.mov"},
+    {"name": "loveTest",    "video": "/home/ubuntu/clips/loveTest/IMG_9265.mov"}
+  ]
+}
