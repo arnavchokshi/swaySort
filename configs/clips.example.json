@@ -1,0 +1,15 @@
+{
+  "_doc": "Clip manifest consumed by work/run_all_tests.py and work/render_overlays.py. Copy to configs/clips.json and edit `video` for each clip to point at YOUR copy of that file. Anything in configs/clips.json is gitignored. Clip names are arbitrary; they're only used to namespace the per-clip output directory under work/results/<name>/.",
+
+  "clips": [
+    {"name": "BigTest",     "video": "/absolute/path/to/BigTest.mov"},
+    {"name": "mirrorTest",  "video": "/absolute/path/to/IMG_2946.MP4"},
+    {"name": "2pplTest",    "video": "/absolute/path/to/2pplTest.mov"},
+    {"name": "adiTest",     "video": "/absolute/path/to/IMG_1649.mov"},
+    {"name": "easyTest",    "video": "/absolute/path/to/IMG_2082.mov"},
+    {"name": "gymTest",     "video": "/absolute/path/to/IMG_8309.mov"},
+    {"name": "loveTest",    "video": "/absolute/path/to/IMG_9265.mov"},
+    {"name": "shorterTest", "video": "/absolute/path/to/TestVideo.mov"},
+    {"name": "MotionTest",  "video": "/absolute/path/to/IMG_4716.mov"}
+  ]
+}

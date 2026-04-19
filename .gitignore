@@ -17,3 +17,6 @@ env/
 
 # Detection caches saved next to source videos (regenerable)
 *.det_cache.pkl
+
+# Local clip manifest (each user's video paths differ; ship the example only)
+configs/clips.json

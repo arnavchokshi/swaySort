@@ -4,38 +4,53 @@ Writes per-clip results to ``work/results/<clip>/tracks.pkl`` (and a
 ``.cache.pkl`` next to it), and dumps a single ``work/results/timings.json``
 with end-to-end wall-clock + per-clip track counts so the canvas can
 visualize the run.
+
+Clip list is read from a manifest JSON (default ``configs/clips.json``,
+fall back to ``configs/clips.example.json``). See
+``configs/clips.example.json`` for the schema. Override with
+``--clips-manifest path/to/your.json`` and the device with
+``--device cuda:0`` (or env ``PIPE_DEVICE``).
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
 import time
 import traceback
 from pathlib import Path
+from typing import List, Tuple
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
-CLIPS = [
-    ("BigTest",     Path("/Users/arnavchokshi/Desktop/BigTest/BigTest.mov")),
-    ("mirrorTest",  Path("/Users/arnavchokshi/Desktop/mirrorTest/IMG_2946.MP4")),
-    ("2pplTest",    Path("/Users/arnavchokshi/Desktop/2pplTest/2pplTest.mov")),
-    ("adiTest",     Path("/Users/arnavchokshi/Desktop/adiTest/IMG_1649.mov")),
-    ("easyTest",    Path("/Users/arnavchokshi/Desktop/easyTest/IMG_2082.mov")),
-    ("gymTest",     Path("/Users/arnavchokshi/Desktop/gymTest/IMG_8309.mov")),
-    ("loveTest",    Path("/Users/arnavchokshi/Desktop/loveTest/IMG_9265.mov")),
-    ("shorterTest", Path("/Users/arnavchokshi/Desktop/shorterTest/TestVideo.mov")),
-    ("MotionTest",  Path("/Users/arnavchokshi/Desktop/MotionTest/IMG_4716.mov")),
-]
+DEFAULT_MANIFEST = REPO / "configs" / "clips.json"
+EXAMPLE_MANIFEST = REPO / "configs" / "clips.example.json"
+
+
+def _load_manifest(path: Path) -> List[Tuple[str, Path]]:
+    """Load ``[(clip_name, video_path), ...]`` from a clip manifest JSON."""
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Clip manifest not found: {path}. Copy "
+            f"{EXAMPLE_MANIFEST} -> configs/clips.json and edit it, or "
+            f"pass --clips-manifest path/to/your.json."
+        )
+    data = json.loads(path.read_text())
+    clips = data.get("clips", [])
+    out: List[Tuple[str, Path]] = []
+    for c in clips:
+        name = c["name"]
+        video = Path(os.path.expanduser(c["video"]))
+        out.append((name, video))
+    return out
 
 
 OUT_ROOT = REPO / "work" / "results"
 TIMINGS_PATH = OUT_ROOT / "timings.json"
 LOG_PATH = OUT_ROOT / "run.log"
-
-DEVICE = os.environ.get("PIPE_DEVICE", "mps")
 
 
 def _video_meta(path: Path) -> dict:
@@ -49,15 +64,33 @@ def _video_meta(path: Path) -> dict:
     return {"frames": n, "fps": fps, "width": w, "height": h}
 
 
-def _save_timings(results: list[dict]) -> None:
+def _save_timings(results: list[dict], device: str) -> None:
     OUT_ROOT.mkdir(parents=True, exist_ok=True)
     TIMINGS_PATH.write_text(json.dumps({
-        "device": DEVICE,
+        "device": device,
         "results": results,
     }, indent=2))
 
 
-def main() -> int:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--clips-manifest", type=Path, default=None,
+                   help=f"Clip manifest JSON. Default: {DEFAULT_MANIFEST}, "
+                        f"or {EXAMPLE_MANIFEST} if that's missing.")
+    p.add_argument("--device", default=os.environ.get("PIPE_DEVICE", "mps"),
+                   help="Torch device (cuda:0 / mps / cpu). Defaults to "
+                        "$PIPE_DEVICE or 'mps'.")
+    return p.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    device = args.device
+    manifest = args.clips_manifest or (
+        DEFAULT_MANIFEST if DEFAULT_MANIFEST.is_file() else EXAMPLE_MANIFEST
+    )
+    clips = _load_manifest(manifest)
+    print(f"loaded {len(clips)} clips from {manifest}", flush=True)
     OUT_ROOT.mkdir(parents=True, exist_ok=True)
 
     from tracking.run_pipeline import run_pipeline_on_video
@@ -65,14 +98,14 @@ def main() -> int:
     results: list[dict] = []
     overall_t0 = time.time()
 
-    for i, (name, video) in enumerate(CLIPS, start=1):
+    for i, (name, video) in enumerate(clips, start=1):
         if not video.is_file():
-            print(f"[{i}/{len(CLIPS)}] SKIP {name}: missing {video}", flush=True)
+            print(f"[{i}/{len(clips)}] SKIP {name}: missing {video}", flush=True)
             results.append({
                 "clip": name, "status": "missing_video",
                 "video": str(video),
             })
-            _save_timings(results)
+            _save_timings(results, device)
             continue
 
         out_dir = OUT_ROOT / name
@@ -81,7 +114,7 @@ def main() -> int:
 
         meta = _video_meta(video)
         print(
-            f"[{i}/{len(CLIPS)}] START {name}  frames={meta['frames']} "
+            f"[{i}/{len(clips)}] START {name}  frames={meta['frames']} "
             f"fps={meta['fps']:.1f} res={meta['width']}x{meta['height']} "
             f"video={video}",
             flush=True,
@@ -95,14 +128,14 @@ def main() -> int:
             tracks = run_pipeline_on_video(
                 video=video,
                 out=out_pkl,
-                device=DEVICE,
+                device=device,
                 force=True,
             )
             n_tracks = len(tracks)
         except Exception as exc:
             status = "error"
             err = f"{type(exc).__name__}: {exc}\n{traceback.format_exc()}"
-            print(f"[{i}/{len(CLIPS)}] ERROR {name}: {err}", flush=True)
+            print(f"[{i}/{len(clips)}] ERROR {name}: {err}", flush=True)
         wall = time.time() - t0
 
         rec = {
@@ -123,20 +156,20 @@ def main() -> int:
         results.append(rec)
 
         print(
-            f"[{i}/{len(CLIPS)}] DONE  {name}  status={status} "
+            f"[{i}/{len(clips)}] DONE  {name}  status={status} "
             f"wall={wall:.1f}s tracks={n_tracks} "
             f"pipe_fps={rec['fps_pipeline']:.2f}",
             flush=True,
         )
 
-        _save_timings(results)
+        _save_timings(results, device)
 
     overall = time.time() - overall_t0
     print(f"\nALL DONE.  total wall = {overall:.1f}s "
           f"({overall/60:.1f} min)", flush=True)
 
     summary = {
-        "device": DEVICE,
+        "device": device,
         "total_wall_seconds": round(overall, 3),
         "results": results,
     }

@@ -1,24 +1,33 @@
 # Production v8 best-pipeline dependencies.
 #
-# Targets Python 3.11+ on macOS (mps), CUDA 12.x on NVIDIA Hopper, or
-# CPU. torch / torchvision are NOT pinned here -- install the platform-
-# specific build first, e.g.:
-#   pip install torch torchvision \
-#       --index-url https://download.pytorch.org/whl/cu124
-# then `pip install -r requirements.txt`.
+# Targets Python 3.11 on macOS (mps), CUDA 12.x on NVIDIA, or CPU.
+# Versions are pinned to the exact releases the v8 numbers in the README
+# (and the work/benchmarks/ artifacts) were measured against -- if you
+# care about reproducing the same IDF1 / FPS, use these.
+#
+# torch / torchvision are NOT pinned in this file because the right
+# wheel depends on your platform (CUDA vs MPS vs CPU). Install them
+# FIRST, then `pip install -r requirements.txt`. See README "Quickstart".
 
 # Detection + tracking
-ultralytics>=8.4.37,<9
-boxmot>=10.0.52
-lap>=0.5.12
+ultralytics==8.4.37
+boxmot==18.0.0
+lap==0.5.13
+lapx==0.9.4
+filterpy==1.4.5
 
 # Numerics / vision
-numpy>=1.26,<3
-scipy>=1.11
-opencv-python-headless>=4.9,<4.11
-imageio>=2.34
-imageio-ffmpeg>=0.5
-ffmpeg-python>=0.2.0
+numpy==1.26.4
+scipy==1.17.1
+opencv-python==4.10.0.84
 
 # Pickling (cache + tracks.pkl)
-joblib>=1.3
+joblib==1.5.3
+
+# Required by ultralytics + boxmot at runtime; pinned for reproducibility
+tqdm==4.67.3
+
+# Only needed to regenerate the README comparison charts via
+# scripts/generate_comparison_charts.py. Safe to remove if you only
+# want to run the production pipeline.
+matplotlib==3.10.8

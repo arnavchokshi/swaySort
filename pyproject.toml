@@ -1,3 +1,9 @@
+[project]
+name = "best-id-strat"
+version = "0.1.0"
+description = "Production 2D person-tracking + ID-assignment pipeline (YOLO26s + DeepOcSort + OSNet ReID + 5-stage post-process)."
+requires-python = ">=3.11,<3.12"
+
 [tool.pytest.ini_options]
 addopts = "-p no:hydra --import-mode=importlib"
 norecursedirs = [".venv", "venv", "weights", "docs"]

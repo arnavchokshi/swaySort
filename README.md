@@ -17,22 +17,50 @@ verified on a 7-clip benchmark with a strict no-regression rule.
 
 ## Quickstart
 
-```bash
-python -m venv .venv && source .venv/bin/activate
+**Prereqs.** Python **3.11** (everything is pinned against 3.11 — newer
+Python may not have wheels for the pinned `numpy 1.26.4` / `torch 2.11`).
+For GPU you also need a working CUDA driver (NVIDIA) or macOS 13+
+(Apple Silicon / MPS).
 
-pip install torch torchvision \
-    --index-url https://download.pytorch.org/whl/cu124   # or default for mps/cpu
+```bash
+git clone https://github.com/arnavchokshi/swaySort.git
+cd swaySort
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install --upgrade pip
+
+# 1) Install torch FIRST (the wheel depends on your platform):
+#    -- NVIDIA + CUDA 12.x:
+pip install torch==2.11.0 torchvision==0.26.0 \
+    --index-url https://download.pytorch.org/whl/cu124
+#    -- Apple Silicon (mps) or CPU-only:
+pip install torch==2.11.0 torchvision==0.26.0
+
+# 2) Install the rest of the pinned deps (exact versions used to
+#    measure every IDF1 / FPS number in this README):
 pip install -r requirements.txt
 
+# 3) Verify the install end-to-end (~15s on CPU, no GPU required):
+python scripts/smoke_test.py --device cpu     # or --device cuda:0 / mps
+
+# 4) Run the production pipeline on your own video:
 python -m tracking.run_pipeline \
     --video path/to/dance.mp4 \
     --out   work/dance/tracks.pkl \
-    --device cuda:0
+    --device cuda:0                           # or mps / cpu
 ```
 
 Outputs `work/dance/tracks.pkl` (final tracks) and
 `work/dance/tracks.pkl.cache.pkl` (intermediate raw detections, kept on
 disk so post-process re-runs are free).
+
+> **Reproducibility note.** Every dependency in `requirements.txt` is
+> pinned to the *exact* version that produced the numbers in the
+> "Headline result" and "Speed" sections below. The shipped
+> `weights/best.pt` (57 MB, dance-fine-tuned YOLO26s) is what every
+> per-clip IDF1 in the headline table was measured against. The OSNet
+> ReID checkpoint is auto-downloaded by BoxMOT on first run
+> (~5 MB). **No data outside the repo is needed to reproduce** —
+> bring any input video and a Torch device.
 
 ---
 
@@ -237,10 +265,13 @@ pyproject.toml                  project + pytest config
 
 configs/
   best_pipeline.json            post-process JSON config
+  clips.example.json            template manifest for batch scripts
 
 docs/
   PIPELINE_SPEC.md              exhaustive reproduction spec
   EXPERIMENTS_LOG.md            decisions + things tried & rejected
+  figures/                      README comparison charts (PNG + Mermaid)
+  videos/                       README side-by-side video assets
 
 prune_tracks.py                 FrameDetections cache dataclass
 tracking/
@@ -250,6 +281,17 @@ tracking/
   postprocess.py                stage-3 prune/interp/merge logic
   best_pipeline.py              stages 3-7 driver + helpers
   bbox_stitch.py                long-gap bbox continuity stitch
+
+scripts/
+  smoke_test.py                 fresh-clone install verifier
+  benchmark_trackers.py         fair head-to-head tracker speed bench
+  generate_comparison_charts.py regenerates the README PNGs + Mermaid
+
+work/
+  benchmarks/                   measured speed JSON + run logs
+  results/                      per-clip tracks.pkl + overlay videos
+  run_all_tests.py              batch driver (uses configs/clips.json)
+  render_overlays.py            batch overlay renderer (same manifest)
 
 weights/
   best.pt                       dance-fine-tuned YOLO26s (load-bearing)

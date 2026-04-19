@@ -1,9 +1,19 @@
-"""Render bbox + track-id overlays on each test clip and open them."""
+"""Render bbox + track-id overlays on each clip listed in the manifest.
+
+Reads the clip list from a manifest JSON (default ``configs/clips.json``,
+fall back to ``configs/clips.example.json``); see
+``configs/clips.example.json`` for the schema. Override with
+``--clips-manifest path/to/your.json``.
+"""
 from __future__ import annotations
 
+import argparse
+import json
+import os
 import sys
 import time
 from pathlib import Path
+from typing import List, Tuple
 import colorsys
 
 import cv2
@@ -13,20 +23,21 @@ import numpy as np
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
-
-CLIPS = [
-    ("BigTest",     Path("/Users/arnavchokshi/Desktop/BigTest/BigTest.mov")),
-    ("mirrorTest",  Path("/Users/arnavchokshi/Desktop/mirrorTest/IMG_2946.MP4")),
-    ("2pplTest",    Path("/Users/arnavchokshi/Desktop/2pplTest/2pplTest.mov")),
-    ("adiTest",     Path("/Users/arnavchokshi/Desktop/adiTest/IMG_1649.mov")),
-    ("easyTest",    Path("/Users/arnavchokshi/Desktop/easyTest/IMG_2082.mov")),
-    ("gymTest",     Path("/Users/arnavchokshi/Desktop/gymTest/IMG_8309.mov")),
-    ("loveTest",    Path("/Users/arnavchokshi/Desktop/loveTest/IMG_9265.mov")),
-    ("shorterTest", Path("/Users/arnavchokshi/Desktop/shorterTest/TestVideo.mov")),
-    ("MotionTest",  Path("/Users/arnavchokshi/Desktop/MotionTest/IMG_4716.mov")),
-]
-
+DEFAULT_MANIFEST = REPO / "configs" / "clips.json"
+EXAMPLE_MANIFEST = REPO / "configs" / "clips.example.json"
 OUT_ROOT = REPO / "work" / "results"
+
+
+def _load_manifest(path: Path) -> List[Tuple[str, Path]]:
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Clip manifest not found: {path}. Copy "
+            f"{EXAMPLE_MANIFEST} -> configs/clips.json and edit it, or "
+            f"pass --clips-manifest path/to/your.json."
+        )
+    data = json.loads(path.read_text())
+    return [(c["name"], Path(os.path.expanduser(c["video"])))
+            for c in data.get("clips", [])]
 
 
 def color_for_id(tid: int) -> tuple[int, int, int]:
@@ -107,15 +118,31 @@ def render_clip(name: str, video: Path, tracks_pkl: Path, out_mp4: Path) -> dict
     }
 
 
-def main() -> int:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--clips-manifest", type=Path, default=None,
+                   help=f"Clip manifest JSON. Default: {DEFAULT_MANIFEST}, "
+                        f"or {EXAMPLE_MANIFEST} if that's missing.")
+    return p.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    manifest = args.clips_manifest or (
+        DEFAULT_MANIFEST if DEFAULT_MANIFEST.is_file() else EXAMPLE_MANIFEST
+    )
+    clips = _load_manifest(manifest)
+    print(f"loaded {len(clips)} clips from {manifest}", flush=True)
+
     results = []
-    for i, (name, video) in enumerate(CLIPS, 1):
+    for i, (name, video) in enumerate(clips, 1):
         pkl = OUT_ROOT / name / "tracks.pkl"
         if not pkl.is_file() or not video.is_file():
-            print(f"[{i}/{len(CLIPS)}] SKIP {name}: missing pkl or video", flush=True)
+            print(f"[{i}/{len(clips)}] SKIP {name}: missing pkl or video",
+                  flush=True)
             continue
         out_mp4 = OUT_ROOT / name / f"{name}_overlay.mp4"
-        print(f"[{i}/{len(CLIPS)}] rendering {name} -> {out_mp4}", flush=True)
+        print(f"[{i}/{len(clips)}] rendering {name} -> {out_mp4}", flush=True)
         r = render_clip(name, video, pkl, out_mp4)
         results.append(r)
         print(f"   done {name}: {r['frames']} frames in {r['wall_seconds']}s",
