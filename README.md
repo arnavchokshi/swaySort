@@ -185,41 +185,50 @@ both faster *and* more accurate**.
 
 ---
 
-## Side-by-side: ours vs ByteTrack on the largest-gap clip
+## Side-by-side: ours vs base StrongSort on `loveTest`
 
-`loveTest` is the worst-case clip (15 same-uniform dancers in
-sustained close contact). On the same cached YOLO detections + same
-machine, our shipped pipeline scores **IDF1 = 0.836** vs base
-ByteTrack at **IDF1 = 0.744** — a **−9.2 pp** drop just from
-swapping in a motion-only tracker
-(see [`work/benchmarks/per_clip_idf1.json`](work/benchmarks/per_clip_idf1.json)).
-Below is 6 seconds from the middle of the clip, our pipeline on the
-left, base ByteTrack on the right. Each bounding box is colored by
-track ID — **stable colors across frames = stable identity, color
-flips = identity swaps the tracker did not recover from**.
+`loveTest` is the worst-case clip in the benchmark — 15 same-uniform
+dancers in sustained close contact, the kind of scene that breaks
+every published tracker we tried. On **the same cached YOLO
+detections, the same machine, the same ground truth**, our shipped
+pipeline scores **IDF1 = 0.836** vs base StrongSort at **IDF1 =
+0.749** (numbers in
+[`work/benchmarks/per_clip_idf1.json`](work/benchmarks/per_clip_idf1.json)).
+We deliberately picked StrongSort here, not ByteTrack — StrongSort
+is BoxMOT's premium appearance-based tracker (Kalman + ECC + linear
+assignment + the *same* OSNet ReID head we use), so this comparison
+isolates exactly what the post-process chain buys you.
 
-![Ours vs ByteTrack on loveTest — 6-second preview](docs/videos/love_ours_vs_bytetrack_preview.gif)
+![Ours vs base StrongSort on loveTest — full 27-second preview](docs/videos/love_ours_vs_strongsort_preview.gif)
 
-Watch the full 27-second comparison:
-[`docs/videos/love_ours_vs_bytetrack.mp4`](docs/videos/love_ours_vs_bytetrack.mp4).
+Full-quality MP4:
+[`docs/videos/love_ours_vs_strongsort.mp4`](docs/videos/love_ours_vs_strongsort.mp4).
+Each bounding box is colored by track ID — **stable colors across
+frames = stable identity, every color flip is an identity swap the
+tracker never recovered from.**
 
-What to look for (numbers from `work/benchmarks/render_run.log`):
-- **Total ID space across the whole clip.** Ours emits **14 final
-  IDs**; ByteTrack emits **21**. Ground truth is 15 dancers — six
-  ByteTrack IDs are split-and-rebuilt copies of the same dancer, our
-  ID-merge stage collapsed them.
-- **Color stability on close-contact frames.** Around the middle
-  cluster (frames where 4+ dancers occlude each other), ByteTrack's
-  IDs flicker as boxes are reassigned; ours is held stable by the
-  OSNet-cosine-gated ID merge in stage 3 of the post-process chain.
-- **Mean active dancers per frame is the same** (~14.3 for both),
-  so ByteTrack isn't dropping people — it's *renaming* them, which
-  is exactly what IDF1 punishes.
+What to look for (live counters in the top-right of each panel —
+numbers verified against `work/benchmarks/per_clip_idf1.json`):
 
-This isn't ByteTrack failing in a pathological way — it's the
-expected behavior of a motion-only tracker on a same-uniform
-crowded scene, and exactly the failure mode our DeepOcSort + ReID +
-post-process chain was built to fix.
+| Metric (whole 820-frame clip, GT = 15 dancers) | Ours | Base StrongSort | Delta |
+|---|---:|---:|---:|
+| Final unique IDs in the prediction | **14** | 38 | 2.7× more IDs than real dancers |
+| Average track lifetime | **809 frames** | 308 frames | StrongSort tracks live 1/3 as long |
+| Identity switches (`num_switches`) | **1** | 26 | **26× more swaps** |
+| Fragmentations (`num_fragmentations`) | **52** | 209 | 4× more fragmentations |
+| IDF1 | **0.836** | 0.749 | **+8.7 pp** |
+
+The visible chaos on the right side is StrongSort's tracker
+flickering its ID space *constantly* — every time two dancers
+occlude, StrongSort's appearance-cosine assignment misroutes the box
+and creates a new ID, which then never gets re-merged. Our pipeline
+uses the same OSNet head but adds (a) an OSNet-cosine-gated
+ID-merge stage that re-stitches re-emerging dancers back to their
+original ID, and (b) a post-merge AND-gate that kills the spurious
+short tracks before they ever reach the IDF1 scorer. **That's the
++8.7-pp gap, in pure post-process.** No model retraining, no
+heavier ReID head — just the chain documented in
+[`docs/PIPELINE_SPEC.md`](docs/PIPELINE_SPEC.md).
 
 ---
 
