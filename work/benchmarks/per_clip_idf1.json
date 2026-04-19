@@ -1,0 +1,324 @@
+{
+  "device": "mps",
+  "scoring": "py-motmetrics, IoU 0.5, mot15-2D",
+  "ours_source": "work/results/<clip>/tracks.pkl (post-processed v8 pipeline)",
+  "competitors_source": "scripts/eval_per_clip.py rerun on the cached YOLO multi-scale detections; default BoxMOT v18 hyperparameters",
+  "clips": {
+    "loveTest": {
+      "video": "/Users/arnavchokshi/Desktop/loveTest/IMG_9265.mov",
+      "gt": "/Users/arnavchokshi/Desktop/loveTest/gt/gt.txt",
+      "device": "mps",
+      "trackers": {
+        "This pipeline (v8)": {
+          "idf1": 0.8363313158674398,
+          "mota": 0.6879674796747968,
+          "num_switches": 1.0,
+          "num_fragmentations": 52.0,
+          "num_misses": 2405.0,
+          "num_false_positives": 1432.0,
+          "mostly_tracked": 11.0,
+          "mostly_lost": 1.0,
+          "num_unique_objects": 15.0,
+          "num_frames": 820.0
+        },
+        "BotSort (base)": {
+          "idf1": 0.7856370142298411,
+          "mota": 0.589430894308943,
+          "num_switches": 8.0,
+          "num_fragmentations": 186.0,
+          "num_misses": 2804.0,
+          "num_false_positives": 2238.0,
+          "mostly_tracked": 9.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 15.0,
+          "num_frames": 820.0
+        },
+        "StrongSort (base)": {
+          "idf1": 0.7485009993337775,
+          "mota": 0.5826016260162601,
+          "num_switches": 26.0,
+          "num_fragmentations": 209.0,
+          "num_misses": 2846.0,
+          "num_false_positives": 2262.0,
+          "mostly_tracked": 9.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 15.0,
+          "num_frames": 820.0
+        },
+        "HybridSort (base)": {
+          "idf1": 0.7795918367346939,
+          "mota": 0.5884552845528455,
+          "num_switches": 6.0,
+          "num_fragmentations": 230.0,
+          "num_misses": 2823.0,
+          "num_false_positives": 2233.0,
+          "mostly_tracked": 9.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 15.0,
+          "num_frames": 820.0
+        },
+        "ByteTrack (base)": {
+          "idf1": 0.7439095368753638,
+          "mota": 0.5865853658536586,
+          "num_switches": 9.0,
+          "num_fragmentations": 174.0,
+          "num_misses": 2811.0,
+          "num_false_positives": 2265.0,
+          "mostly_tracked": 8.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 15.0,
+          "num_frames": 820.0
+        },
+        "OcSort (base, no ReID)": {
+          "idf1": 0.7347635909185586,
+          "mota": 0.5884552845528455,
+          "num_switches": 7.0,
+          "num_fragmentations": 229.0,
+          "num_misses": 2825.0,
+          "num_false_positives": 2230.0,
+          "mostly_tracked": 9.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 15.0,
+          "num_frames": 820.0
+        }
+      }
+    },
+    "MotionTest": {
+      "video": "/Users/arnavchokshi/Desktop/MotionTest/IMG_4716.mov",
+      "gt": "/Users/arnavchokshi/Desktop/MotionTest/gt/gt.txt",
+      "device": "mps",
+      "trackers": {
+        "This pipeline (v8)": {
+          "idf1": 0.8612037621322756,
+          "mota": 0.8600522503265645,
+          "num_switches": 4.0,
+          "num_fragmentations": 45.0,
+          "num_misses": 1379.0,
+          "num_false_positives": 974.0,
+          "mostly_tracked": 13.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 14.0,
+          "num_frames": 1203.0
+        },
+        "BotSort (base)": {
+          "idf1": 0.7798833819241983,
+          "mota": 0.8023987649922812,
+          "num_switches": 8.0,
+          "num_fragmentations": 195.0,
+          "num_misses": 2038.0,
+          "num_false_positives": 1282.0,
+          "mostly_tracked": 12.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 14.0,
+          "num_frames": 1203.0
+        },
+        "StrongSort (base)": {
+          "idf1": 0.7574065080135989,
+          "mota": 0.8045956537228358,
+          "num_switches": 29.0,
+          "num_fragmentations": 229.0,
+          "num_misses": 2001.0,
+          "num_false_positives": 1261.0,
+          "mostly_tracked": 12.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 14.0,
+          "num_frames": 1203.0
+        },
+        "HybridSort (base)": {
+          "idf1": 0.7333859798323411,
+          "mota": 0.803051894074338,
+          "num_switches": 9.0,
+          "num_fragmentations": 249.0,
+          "num_misses": 2034.0,
+          "num_false_positives": 1274.0,
+          "mostly_tracked": 12.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 14.0,
+          "num_frames": 1203.0
+        },
+        "ByteTrack (base)": {
+          "idf1": 0.7689693880646825,
+          "mota": 0.8181926137038357,
+          "num_switches": 11.0,
+          "num_fragmentations": 161.0,
+          "num_misses": 1887.0,
+          "num_false_positives": 1164.0,
+          "mostly_tracked": 12.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 14.0,
+          "num_frames": 1203.0
+        },
+        "OcSort (base, no ReID)": {
+          "idf1": 0.7952363592174019,
+          "mota": 0.8025175157344733,
+          "num_switches": 8.0,
+          "num_fragmentations": 248.0,
+          "num_misses": 2043.0,
+          "num_false_positives": 1275.0,
+          "mostly_tracked": 11.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 14.0,
+          "num_frames": 1203.0
+        }
+      }
+    },
+    "shorterTest": {
+      "video": "/Users/arnavchokshi/Desktop/shorterTest/TestVideo.mov",
+      "gt": "/Users/arnavchokshi/Desktop/shorterTest/gt/gt.txt",
+      "device": "mps",
+      "trackers": {
+        "This pipeline (v8)": {
+          "idf1": 0.9228650137741047,
+          "mota": 0.8454867954276705,
+          "num_switches": 0.0,
+          "num_fragmentations": 4.0,
+          "num_misses": 192.0,
+          "num_false_positives": 200.0,
+          "mostly_tracked": 7.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 307.0
+        },
+        "BotSort (base)": {
+          "idf1": 0.8875923765071957,
+          "mota": 0.7721718565234529,
+          "num_switches": 0.0,
+          "num_fragmentations": 22.0,
+          "num_misses": 255.0,
+          "num_false_positives": 323.0,
+          "mostly_tracked": 7.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 307.0
+        },
+        "StrongSort (base)": {
+          "idf1": 0.8811188811188811,
+          "mota": 0.759558533701222,
+          "num_switches": 2.0,
+          "num_fragmentations": 24.0,
+          "num_misses": 267.0,
+          "num_false_positives": 341.0,
+          "mostly_tracked": 7.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 307.0
+        },
+        "HybridSort (base)": {
+          "idf1": 0.8835496996706065,
+          "mota": 0.7638943634213639,
+          "num_switches": 2.0,
+          "num_fragmentations": 28.0,
+          "num_misses": 255.0,
+          "num_false_positives": 342.0,
+          "mostly_tracked": 7.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 307.0
+        },
+        "ByteTrack (base)": {
+          "idf1": 0.8818867195051228,
+          "mota": 0.7591643673630272,
+          "num_switches": 0.0,
+          "num_fragmentations": 17.0,
+          "num_misses": 256.0,
+          "num_false_positives": 355.0,
+          "mostly_tracked": 7.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 307.0
+        },
+        "OcSort (base, no ReID)": {
+          "idf1": 0.8410236525785189,
+          "mota": 0.7631060307449744,
+          "num_switches": 3.0,
+          "num_fragmentations": 29.0,
+          "num_misses": 257.0,
+          "num_false_positives": 341.0,
+          "mostly_tracked": 7.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 307.0
+        }
+      }
+    },
+    "mirrorTest": {
+      "video": "/Users/arnavchokshi/Desktop/mirrorTest/IMG_2946.MP4",
+      "gt": "/Users/arnavchokshi/Desktop/mirrorTest/gt/gt.txt",
+      "device": "mps",
+      "trackers": {
+        "This pipeline (v8)": {
+          "idf1": 0.9927007299270073,
+          "mota": 0.9854014598540146,
+          "num_switches": 2.0,
+          "num_fragmentations": 5.0,
+          "num_misses": 26.0,
+          "num_false_positives": 26.0,
+          "mostly_tracked": 9.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 411.0
+        },
+        "BotSort (base)": {
+          "idf1": 0.9614147909967846,
+          "mota": 0.9221411192214112,
+          "num_switches": 0.0,
+          "num_fragmentations": 26.0,
+          "num_misses": 111.0,
+          "num_false_positives": 177.0,
+          "mostly_tracked": 9.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 411.0
+        },
+        "StrongSort (base)": {
+          "idf1": 0.9504660452729694,
+          "mota": 0.9067315490673155,
+          "num_switches": 1.0,
+          "num_fragmentations": 24.0,
+          "num_misses": 116.0,
+          "num_false_positives": 228.0,
+          "mostly_tracked": 9.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 411.0
+        },
+        "HybridSort (base)": {
+          "idf1": 0.957588690317418,
+          "mota": 0.9140308191403081,
+          "num_switches": 0.0,
+          "num_fragmentations": 28.0,
+          "num_misses": 109.0,
+          "num_false_positives": 209.0,
+          "mostly_tracked": 9.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 411.0
+        },
+        "ByteTrack (base)": {
+          "idf1": 0.9662711638448207,
+          "mota": 0.9332251959989186,
+          "num_switches": 2.0,
+          "num_fragmentations": 13.0,
+          "num_misses": 71.0,
+          "num_false_positives": 174.0,
+          "mostly_tracked": 9.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 411.0
+        },
+        "OcSort (base, no ReID)": {
+          "idf1": 0.9578441835645678,
+          "mota": 0.9145715058123818,
+          "num_switches": 0.0,
+          "num_fragmentations": 28.0,
+          "num_misses": 109.0,
+          "num_false_positives": 207.0,
+          "mostly_tracked": 9.0,
+          "mostly_lost": 0.0,
+          "num_unique_objects": 9.0,
+          "num_frames": 411.0
+        }
+      }
+    }
+  }
+}

@@ -31,3 +31,8 @@ tqdm==4.67.3
 # scripts/generate_comparison_charts.py. Safe to remove if you only
 # want to run the production pipeline.
 matplotlib==3.10.8
+
+# Only needed to score per-clip IDF1 vs your GT files via
+# scripts/eval_per_clip.py (and to reproduce work/benchmarks/per_clip_idf1.json).
+# Safe to remove if you only want to run the production pipeline.
+motmetrics==1.4.0

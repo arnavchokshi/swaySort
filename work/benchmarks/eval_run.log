@@ -1,0 +1,99 @@
+2026-04-19 00:30:50,429 INFO eval_per_clip: loaded 7 clips from /Users/arnavchokshi/Desktop/BEST_ID_STRAT/configs/clips.json
+2026-04-19 00:30:50,429 INFO eval_per_clip: === clip MotionTest ===
+2026-04-19 00:30:50,429 INFO benchmark_trackers: running YOLO multi-scale detection (one-time): /Users/arnavchokshi/Desktop/MotionTest/IMG_4716.mov
+2026-04-19 00:30:52,723 INFO tracking.multi_scale_detector: multi-scale detector: weights=/Users/arnavchokshi/Desktop/BEST_ID_STRAT/weights/best.pt imgsz=[768, 1024] conf=0.340 iou=0.700 ensemble_iou=0.60 device=mps classes=[0] tta_flip=False
+2026-04-19 00:32:24,287 INFO benchmark_trackers: detector: 1203 frames in 89.5s (13.44 FPS, 74.4 ms/frame)
+2026-04-19 00:32:34,190 INFO benchmark_trackers: wrote detection cache: /Users/arnavchokshi/Desktop/MotionTest/IMG_4716.det_cache.pkl
+2026-04-19 00:32:34,193 INFO eval_per_clip: [ours-v8] loading shipped tracks: /Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/MotionTest/tracks.pkl
+2026-04-19 00:32:36,028 INFO eval_per_clip: [ours-v8] IDF1=0.8612 MOTA=0.8601 IDS=4 (scored in 1.7s)
+2026-04-19 00:32:36,028 INFO eval_per_clip: [BotSort (base)] running on cached detections
+2026-04-19 00:32:36,034 INFO tracking.deepocsort_runner: installed BoxMOT KalmanFilter cholesky-jitter patch (update_state)
+[32m[1mSUCCESS [0m | [32m[1mBotSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, track_high_thresh=0.5, track_low_thresh=0.1, new_track_thresh=0.6, track_buffer=30, match_thresh=0.8, proximity_thresh=0.5, appearance_thresh=0.25, cmc_method=ecc, frame_rate=30, fuse_first_associate=False, with_reid=True[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 63075] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-19 00:33:36,570 INFO eval_per_clip: [BotSort (base)] IDF1=0.7799 MOTA=0.8024 IDS=8 FN=2038 FP=1282 (run 59.6s)
+2026-04-19 00:33:36,571 INFO eval_per_clip: [StrongSort (base)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mStrongSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, max_cos_dist=0.2, max_iou_dist=0.7, n_init=3, nn_budget=100, mc_lambda=0.98, ema_alpha=0.9[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 63075] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-19 00:36:28,169 INFO eval_per_clip: [StrongSort (base)] IDF1=0.7574 MOTA=0.8046 IDS=29 FN=2001 FP=1261 (run 170.6s)
+2026-04-19 00:36:28,170 INFO eval_per_clip: [HybridSort (base)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mHybridSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, cmc_method=ecc, with_reid=True, low_thresh=0.1, delta_t=3, inertia=0.05, use_byte=True, use_custom_kf=True, longterm_bank_length=30, alpha=0.9, adapfs=False, track_thresh=0.5, EG_weight_high_score=4.6, EG_weight_low_score=1.3, TCM_first_step=True, TCM_byte_step=True, TCM_byte_step_weight=1.0, high_score_matching_thresh=0.7, with_longterm_reid=True, longterm_reid_weight=0.0, with_longterm_reid_correction=True, longterm_reid_correction_thresh=0.4, longterm_reid_correction_thresh_low=0.4, dataset=[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 63075] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-19 00:37:31,372 INFO eval_per_clip: [HybridSort (base)] IDF1=0.7334 MOTA=0.8031 IDS=9 FN=2034 FP=1274 (run 62.4s)
+2026-04-19 00:37:31,372 INFO eval_per_clip: [ByteTrack (base)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mByteTrack: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, track_thresh=0.45, match_thresh=0.8, track_buffer=25, frame_rate=30[0m
+2026-04-19 00:37:33,356 INFO eval_per_clip: [ByteTrack (base)] IDF1=0.7690 MOTA=0.8182 IDS=11 FN=1887 FP=1164 (run 1.4s)
+2026-04-19 00:37:33,356 INFO eval_per_clip: [OcSort (base, no ReID)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, delta_t=3, inertia=0.2, use_byte=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+2026-04-19 00:37:35,397 INFO eval_per_clip: [OcSort (base, no ReID)] IDF1=0.7952 MOTA=0.8025 IDS=8 FN=2043 FP=1275 (run 1.4s)
+2026-04-19 00:37:35,623 INFO eval_per_clip: wrote /Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/benchmarks/per_clip_idf1.json after clip MotionTest
+2026-04-19 00:37:35,624 INFO eval_per_clip: === clip shorterTest ===
+2026-04-19 00:37:35,624 INFO benchmark_trackers: running YOLO multi-scale detection (one-time): /Users/arnavchokshi/Desktop/shorterTest/TestVideo.mov
+2026-04-19 00:37:35,729 INFO tracking.multi_scale_detector: multi-scale detector: weights=/Users/arnavchokshi/Desktop/BEST_ID_STRAT/weights/best.pt imgsz=[768, 1024] conf=0.340 iou=0.700 ensemble_iou=0.60 device=mps classes=[0] tta_flip=False
+2026-04-19 00:37:57,597 INFO benchmark_trackers: detector: 307 frames in 21.3s (14.40 FPS, 69.4 ms/frame)
+2026-04-19 00:37:58,749 INFO benchmark_trackers: wrote detection cache: /Users/arnavchokshi/Desktop/shorterTest/TestVideo.det_cache.pkl
+2026-04-19 00:37:58,753 INFO eval_per_clip: [ours-v8] loading shipped tracks: /Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/shorterTest/tracks.pkl
+2026-04-19 00:37:58,884 INFO eval_per_clip: [ours-v8] IDF1=0.9229 MOTA=0.8455 IDS=0 (scored in 0.1s)
+2026-04-19 00:37:58,884 INFO eval_per_clip: [BotSort (base)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mBotSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, track_high_thresh=0.5, track_low_thresh=0.1, new_track_thresh=0.6, track_buffer=30, match_thresh=0.8, proximity_thresh=0.5, appearance_thresh=0.25, cmc_method=ecc, frame_rate=30, fuse_first_associate=False, with_reid=True[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 63075] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-19 00:38:11,281 INFO eval_per_clip: [BotSort (base)] IDF1=0.8876 MOTA=0.7722 IDS=0 FN=255 FP=323 (run 12.2s)
+2026-04-19 00:38:11,282 INFO eval_per_clip: [StrongSort (base)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mStrongSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, max_cos_dist=0.2, max_iou_dist=0.7, n_init=3, nn_budget=100, mc_lambda=0.98, ema_alpha=0.9[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 63075] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-19 00:38:45,516 INFO eval_per_clip: [StrongSort (base)] IDF1=0.8811 MOTA=0.7596 IDS=2 FN=267 FP=341 (run 33.9s)
+2026-04-19 00:38:45,516 INFO eval_per_clip: [HybridSort (base)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mHybridSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, cmc_method=ecc, with_reid=True, low_thresh=0.1, delta_t=3, inertia=0.05, use_byte=True, use_custom_kf=True, longterm_bank_length=30, alpha=0.9, adapfs=False, track_thresh=0.5, EG_weight_high_score=4.6, EG_weight_low_score=1.3, TCM_first_step=True, TCM_byte_step=True, TCM_byte_step_weight=1.0, high_score_matching_thresh=0.7, with_longterm_reid=True, longterm_reid_weight=0.0, with_longterm_reid_correction=True, longterm_reid_correction_thresh=0.4, longterm_reid_correction_thresh_low=0.4, dataset=[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 63075] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-19 00:39:01,756 INFO eval_per_clip: [HybridSort (base)] IDF1=0.8835 MOTA=0.7639 IDS=2 FN=255 FP=342 (run 16.1s)
+2026-04-19 00:39:01,756 INFO eval_per_clip: [ByteTrack (base)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mByteTrack: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, track_thresh=0.45, match_thresh=0.8, track_buffer=25, frame_rate=30[0m
+2026-04-19 00:39:02,178 INFO eval_per_clip: [ByteTrack (base)] IDF1=0.8819 MOTA=0.7592 IDS=0 FN=256 FP=355 (run 0.3s)
+2026-04-19 00:39:02,179 INFO eval_per_clip: [OcSort (base, no ReID)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, delta_t=3, inertia=0.2, use_byte=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+2026-04-19 00:39:02,569 INFO eval_per_clip: [OcSort (base, no ReID)] IDF1=0.8410 MOTA=0.7631 IDS=3 FN=257 FP=341 (run 0.3s)
+2026-04-19 00:39:02,629 INFO eval_per_clip: wrote /Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/benchmarks/per_clip_idf1.json after clip shorterTest
+2026-04-19 00:39:02,629 INFO eval_per_clip: === clip mirrorTest ===
+2026-04-19 00:39:02,629 INFO benchmark_trackers: running YOLO multi-scale detection (one-time): /Users/arnavchokshi/Desktop/mirrorTest/IMG_2946.MP4
+2026-04-19 00:39:02,711 INFO tracking.multi_scale_detector: multi-scale detector: weights=/Users/arnavchokshi/Desktop/BEST_ID_STRAT/weights/best.pt imgsz=[768, 1024] conf=0.340 iou=0.700 ensemble_iou=0.60 device=mps classes=[0] tta_flip=False
+2026-04-19 00:39:31,543 INFO benchmark_trackers: detector: 411 frames in 28.1s (14.62 FPS, 68.4 ms/frame)
+2026-04-19 00:39:33,380 INFO benchmark_trackers: wrote detection cache: /Users/arnavchokshi/Desktop/mirrorTest/IMG_2946.det_cache.pkl
+2026-04-19 00:39:33,385 INFO eval_per_clip: [ours-v8] loading shipped tracks: /Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/mirrorTest/tracks.pkl
+2026-04-19 00:39:33,573 INFO eval_per_clip: [ours-v8] IDF1=0.9927 MOTA=0.9854 IDS=2 (scored in 0.2s)
+2026-04-19 00:39:33,573 INFO eval_per_clip: [BotSort (base)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mBotSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, track_high_thresh=0.5, track_low_thresh=0.1, new_track_thresh=0.6, track_buffer=30, match_thresh=0.8, proximity_thresh=0.5, appearance_thresh=0.25, cmc_method=ecc, frame_rate=30, fuse_first_associate=False, with_reid=True[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 63075] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-19 00:39:51,208 INFO eval_per_clip: [BotSort (base)] IDF1=0.9614 MOTA=0.9221 IDS=0 FN=111 FP=177 (run 17.5s)
+2026-04-19 00:39:51,208 INFO eval_per_clip: [StrongSort (base)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mStrongSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, max_cos_dist=0.2, max_iou_dist=0.7, n_init=3, nn_budget=100, mc_lambda=0.98, ema_alpha=0.9[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 63075] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-19 00:40:23,338 INFO eval_per_clip: [StrongSort (base)] IDF1=0.9505 MOTA=0.9067 IDS=1 FN=116 FP=228 (run 31.9s)
+2026-04-19 00:40:23,338 INFO eval_per_clip: [HybridSort (base)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mHybridSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, cmc_method=ecc, with_reid=True, low_thresh=0.1, delta_t=3, inertia=0.05, use_byte=True, use_custom_kf=True, longterm_bank_length=30, alpha=0.9, adapfs=False, track_thresh=0.5, EG_weight_high_score=4.6, EG_weight_low_score=1.3, TCM_first_step=True, TCM_byte_step=True, TCM_byte_step_weight=1.0, high_score_matching_thresh=0.7, with_longterm_reid=True, longterm_reid_weight=0.0, with_longterm_reid_correction=True, longterm_reid_correction_thresh=0.4, longterm_reid_correction_thresh_low=0.4, dataset=[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 63075] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-19 00:40:45,965 INFO eval_per_clip: [HybridSort (base)] IDF1=0.9576 MOTA=0.9140 IDS=0 FN=109 FP=209 (run 22.4s)
+2026-04-19 00:40:45,966 INFO eval_per_clip: [ByteTrack (base)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mByteTrack: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, track_thresh=0.45, match_thresh=0.8, track_buffer=25, frame_rate=30[0m
+2026-04-19 00:40:46,549 INFO eval_per_clip: [ByteTrack (base)] IDF1=0.9663 MOTA=0.9332 IDS=2 FN=71 FP=174 (run 0.4s)
+2026-04-19 00:40:46,549 INFO eval_per_clip: [OcSort (base, no ReID)] running on cached detections
+[32m[1mSUCCESS [0m | [32m[1mOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, delta_t=3, inertia=0.2, use_byte=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+2026-04-19 00:40:47,302 INFO eval_per_clip: [OcSort (base, no ReID)] IDF1=0.9578 MOTA=0.9146 IDS=0 FN=109 FP=207 (run 0.4s)
+2026-04-19 00:40:47,413 INFO eval_per_clip: wrote /Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/benchmarks/per_clip_idf1.json after clip mirrorTest
+2026-04-19 00:40:47,413 INFO eval_per_clip: done. final summary at /Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/benchmarks/per_clip_idf1.json

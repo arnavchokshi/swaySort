@@ -20,3 +20,6 @@ env/
 
 # Local clip manifest (each user's video paths differ; ship the example only)
 configs/clips.json
+
+# Background-job pid files dropped by long-running scripts
+*.pid

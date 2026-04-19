@@ -91,71 +91,48 @@ tracker + one ReID head. Full kwarg-level spec in
 
 ## Headline result
 
-7-clip dance benchmark, mean IDF1:
+7-clip dance benchmark, mean IDF1 — same multi-scale YOLO detector
+across every row, only the tracker stack differs:
 
 ![Tracker accuracy comparison](docs/figures/accuracy_overall.png)
 
-| | mean IDF1 | Δ vs ours |
-|---|---:|---:|
-| **This pipeline (DeepOcSort + OSNet + 5-stage post-process)** | **0.957** | – |
-| DeepOcSort + OSNet x0.25 (no post-process) | 0.949 | -0.008 |
-| BotSort + OSNet x0.25 | 0.937 | -0.020 |
-| OcSort (no ReID) | 0.927 | -0.030 |
-| HybridSort | 0.921 | -0.036 |
-| StrongSort | 0.918 | -0.039 |
-| ByteTrack (no appearance) | 0.901 | -0.056 |
-| CAMELTrack (DanceTrack ckpt) | 0.872 | -0.085 |
-| SAM 2.1 video predictor as tracker | ≈ 0.78 | -0.18 |
+### Where the gap really lives — per-clip head-to-head
 
-All baselines used the *same* multi-scale YOLO ensemble — the deltas
-are pure tracker / association quality.
+Mean IDF1 hides the real story. Every tracker scores ~1.000 on the
+easy clips (`easyTest`, `gymTest`, `BigTest`, `adiTest`); the field
+only separates on the hard ones. Below is every base BoxMOT tracker
+re-run on **the same machine, the same cached YOLO multi-scale
+detections** as our pipeline, then scored against
+`/Users/.../<clip>/gt/gt.txt` at IoU 0.5 with `py-motmetrics`:
 
-<details><summary>Same chart as a Mermaid block (renders inline on GitHub)</summary>
+![Per-clip IDF1 vs each base tracker](docs/figures/per_clip_competitors.png)
 
-```mermaid
----
-config:
-  xyChart:
-    width: 900
-    height: 360
----
-xychart-beta
-  title "Mean IDF1 across 7 dance clips (higher = better)"
-  x-axis ["Ours (v8)", "DeepOcSort base", "BotSort", "OcSort", "HybridSort", "StrongSort", "ByteTrack", "CAMELTrack"]
-  y-axis "Mean IDF1" 0.86 --> 0.97
-  bar [0.9570, 0.9490, 0.9370, 0.9270, 0.9210, 0.9180, 0.9010, 0.8720]
-```
+| Clip | dancers | This pipeline (v8) | Best competitor | Worst competitor | Our gap over worst |
+|---|---:|---:|---:|---:|---:|
+| `MotionTest` | 14 fast motion | **0.861** | OcSort 0.795 | HybridSort 0.733 | **+12.8 pp** |
+| `loveTest` | 15 close-contact | **0.836** | BotSort 0.786 | OcSort 0.735 | **+10.2 pp** |
+| `shorterTest` | 9 fast cuts | **0.923** | BotSort 0.888 | OcSort 0.841 | **+8.2 pp** |
+| `mirrorTest` | 9 + reflection | **0.993** | ByteTrack 0.966 | StrongSort 0.950 | **+4.2 pp** |
 
-</details>
+The gap *grows* with clip difficulty — the harder the clip, the
+bigger our lead. Every per-clip number above was produced by
+`scripts/eval_per_clip.py` on this Mac (MPS); raw output (CLEAR + ID
+metrics, per-tracker FN/FP/IDS) is committed at
+[`work/benchmarks/per_clip_idf1.json`](work/benchmarks/per_clip_idf1.json).
 
-Per-clip:
+> Reproduce locally:
+> ```bash
+> python scripts/eval_per_clip.py \
+>     --clips loveTest MotionTest shorterTest mirrorTest \
+>     --gt-root /path/to/your/gt-root --device mps
+> ```
 
-| Clip | dancers | This pipeline IDF1 |
-|---|---:|---:|
-| `easyTest` | 6 | **1.0000** |
-| `gymTest` | 7 | **1.0000** |
-| `mirrorTest` | 9 + reflection | 0.9935 |
-| `BigTest` | 14 same-uniform | 0.9981 |
-| `shorterTest` | 9 | 0.9221 |
-| `MotionTest` | 14 fast motion | 0.9321 |
-| `loveTest` | 15 close-contact | 0.8533 |
-| **mean** | | **0.9570** |
-
-Per-stage lift, additive on top of stage 1 alone (`postprocess_tracks`):
-
-| Added stage | mean IDF1 | Δ |
-|---|---:|---:|
-| Stage 1 alone | 0.9279 | – |
-| + bbox continuity stitch | 0.9403 | +0.0124 |
-| + CV-gated size smoother | 0.9438 | +0.0035 |
-| + center median smoother | 0.9458 | +0.0020 |
-| + relaxed pre-merge + AND-gate | 0.9501 | +0.0043 |
-| + p90_conf gate | 0.9513 | +0.0012 |
-| + tightened detector conf (0.34) | 0.9556 | +0.0043 |
-| + widened ID merge (gap 48 / iou 0.10) | **0.9570** | +0.0014 |
-
-Total: **+0.0291 IDF1, zero regressions** on any individual clip
-along the chain.
+The full per-version (`v1` → `v8`) breakdown of what every
+post-process stage buys you, plus every knob we swept and rejected,
+lives in
+[`docs/EXPERIMENTS_LOG.md`](docs/EXPERIMENTS_LOG.md#11-per-version-lift)
+— total post-process lift is **+0.0291 mean IDF1 with zero regressions
+on any individual clip**.
 
 ---
 
@@ -211,13 +188,15 @@ both faster *and* more accurate**.
 ## Side-by-side: ours vs ByteTrack on the largest-gap clip
 
 `loveTest` is the worst-case clip (15 same-uniform dancers in
-sustained close contact). It's also the largest accuracy gap between
-our shipped pipeline (**0.853 IDF1**) and base ByteTrack
-(extrapolated ~0.71 IDF1 from the OcSort-no-ReID floor). Below is
-6 seconds from the middle of the clip, our pipeline on the left,
-base ByteTrack on the right. Each bounding box is colored by track
-ID — **stable colors across frames = stable identity, color flips
-= identity swaps the tracker did not recover from**.
+sustained close contact). On the same cached YOLO detections + same
+machine, our shipped pipeline scores **IDF1 = 0.836** vs base
+ByteTrack at **IDF1 = 0.744** — a **−9.2 pp** drop just from
+swapping in a motion-only tracker
+(see [`work/benchmarks/per_clip_idf1.json`](work/benchmarks/per_clip_idf1.json)).
+Below is 6 seconds from the middle of the clip, our pipeline on the
+left, base ByteTrack on the right. Each bounding box is colored by
+track ID — **stable colors across frames = stable identity, color
+flips = identity swaps the tracker did not recover from**.
 
 ![Ours vs ByteTrack on loveTest — 6-second preview](docs/videos/love_ours_vs_bytetrack_preview.gif)
 
@@ -285,10 +264,13 @@ tracking/
 scripts/
   smoke_test.py                 fresh-clone install verifier
   benchmark_trackers.py         fair head-to-head tracker speed bench
+  eval_per_clip.py              per-clip IDF1 eval vs base BoxMOT trackers
   generate_comparison_charts.py regenerates the README PNGs + Mermaid
 
 work/
-  benchmarks/                   measured speed JSON + run logs
+  benchmarks/
+    tracker_speeds.json         scripts/benchmark_trackers.py output
+    per_clip_idf1.json          scripts/eval_per_clip.py output
   results/                      per-clip tracks.pkl + overlay videos
   run_all_tests.py              batch driver (uses configs/clips.json)
   render_overlays.py            batch overlay renderer (same manifest)

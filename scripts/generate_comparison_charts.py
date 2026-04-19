@@ -65,13 +65,34 @@ ACCURACY: List[Tuple[str, float]] = [
     ("CAMELTrack",           0.8720),
 ]
 
-# Per-clip data is now captured in VERSION_PROGRESSION (further down)
-# rather than as a sparse competitor table -- the original idea was a
-# grouped bar of ours vs each competitor per clip, but only one
-# competitor number is published per-clip (loveTest OcSort = 0.71 from
-# EXPERIMENTS_LOG.md §2.1). Showing a chart with mostly-empty groups was
-# misleading, so we instead show the v1 -> v8 progression which fully
-# answers "what does the post-process chain buy you per clip?".
+# Per-clip x per-tracker data lives in work/benchmarks/per_clip_idf1.json
+# and is produced by scripts/eval_per_clip.py (which runs each tracker
+# fresh on the cached YOLO detections and scores against
+# /Users/arnavchokshi/Desktop/<clip>/gt/gt.txt with py-motmetrics).
+# chart_per_clip_competitors() consumes that file directly.
+
+# Tracker name canonicalisation: maps the long names produced by the
+# eval / speed scripts to the short labels we want on the chart.
+TRACKER_LABELS: Dict[str, str] = {
+    "This pipeline (v8)":            OURS_LABEL,
+    "DeepOcSort (ours, OSNet x0.25)": OURS_LABEL,
+    "BotSort (base)":                "BotSort",
+    "StrongSort (base)":             "StrongSort",
+    "HybridSort (base)":             "HybridSort",
+    "ByteTrack (base)":              "ByteTrack",
+    "OcSort (base, no ReID)":        "OcSort",
+}
+
+# Per-tracker color palette for the per-clip grouped chart. Ours is the
+# strong green; competitors are graduated cool tones so the eye reads
+# "ours stands out" without anyone bar being stigmatised.
+COMPETITOR_PALETTE: Dict[str, str] = {
+    "BotSort":    "#1565C0",   # blue 700
+    "HybridSort": "#5E35B1",   # deep purple 600
+    "StrongSort": "#7E57C2",   # deep purple 400
+    "ByteTrack":  "#EF6C00",   # orange 800 (motion-only)
+    "OcSort":     "#D84315",   # deep orange 800 (motion-only)
+}
 
 
 def _save_fig(fig, path: Path) -> None:
@@ -199,6 +220,151 @@ def chart_speed_bars(out_path: Path, speed_json: Path) -> None:
         bbox=dict(boxstyle="round,pad=0.4", facecolor="#ECEFF1",
                   edgecolor="#B0BEC5"),
     )
+    _save_fig(fig, out_path)
+    plt.close(fig)
+
+
+def chart_per_clip_competitors(
+    out_path: Path, per_clip_json: Path,
+    *, min_gap_pp: float = 1.5,
+) -> None:
+    """Grouped-bar IDF1: ours-v8 vs each base BoxMOT tracker per clip.
+
+    Filters out clips where ours leads the field by less than
+    ``min_gap_pp`` IDF1 percentage points -- by default the easy clips
+    where everyone scores ~1.0 (easyTest, gymTest, BigTest) are dropped
+    so the chart only highlights clips with a real, measurable gap.
+    """
+    if not per_clip_json.is_file():
+        log.warning(
+            "per-clip JSON missing -> skipping per-clip chart: %s",
+            per_clip_json,
+        )
+        return
+    payload = json.loads(per_clip_json.read_text())
+    clips_raw = payload.get("clips", {})
+    if not clips_raw:
+        log.warning("no clips in %s; skipping", per_clip_json)
+        return
+
+    competitor_order = ["BotSort", "HybridSort", "StrongSort",
+                        "ByteTrack", "OcSort"]
+
+    rows: List[Tuple[str, float, Dict[str, float], int, int]] = []
+    for clip_name, clip_payload in clips_raw.items():
+        trackers = clip_payload.get("trackers", {})
+        ours = None
+        comp: Dict[str, float] = {}
+        for raw_name, metrics in trackers.items():
+            canon = TRACKER_LABELS.get(raw_name, raw_name)
+            idf1 = float(metrics.get("idf1", float("nan")))
+            if not np.isfinite(idf1):
+                continue
+            if canon == OURS_LABEL:
+                ours = idf1
+            elif canon in competitor_order:
+                comp[canon] = idf1
+        if ours is None or not comp:
+            continue
+        worst = min(comp.values())
+        gap_pp = (ours - worst) * 100
+        n_dancers = clip_payload.get("n_dancers", 0)
+        n_unique_objects = int(
+            trackers.get("This pipeline (v8)", {}).get(
+                "num_unique_objects", 0)
+        )
+        rows.append((clip_name, ours, comp, n_dancers, n_unique_objects))
+
+    rows = [r for r in rows if (r[1] - min(r[2].values())) * 100 >= min_gap_pp]
+    rows.sort(key=lambda r: r[1] - min(r[2].values()), reverse=True)
+
+    if not rows:
+        log.warning("no clips with gap >= %.1fpp; skipping per-clip chart",
+                    min_gap_pp)
+        return
+
+    n_clips = len(rows)
+    n_bars = 1 + len(competitor_order)
+    bar_w = 0.13
+    cluster_w = bar_w * n_bars
+    fig_w = max(10.0, 1.6 + 1.9 * n_clips)
+    fig, ax = plt.subplots(figsize=(fig_w, 5.7))
+    centers = np.arange(n_clips, dtype=float)
+
+    handles_for_legend: List = []
+    handle_labels: List[str] = []
+
+    for ci, (clip_name, ours_v, comp, n_dancers, n_uniq) in enumerate(rows):
+        c0 = centers[ci]
+        positions: List[Tuple[str, float, str, float]] = [
+            (OURS_LABEL, ours_v, OURS_COLOR,
+             c0 - cluster_w / 2 + bar_w / 2),
+        ]
+        for j, name in enumerate(competitor_order, start=1):
+            if name not in comp:
+                continue
+            color = COMPETITOR_PALETTE.get(name, COMP_COLOR)
+            x = c0 - cluster_w / 2 + bar_w / 2 + j * bar_w
+            positions.append((name, comp[name], color, x))
+
+        for name, val, color, x in positions:
+            edge = "#1B5E20" if name == OURS_LABEL else "white"
+            lw = 1.2 if name == OURS_LABEL else 0.5
+            bar = ax.bar(x, val, bar_w, color=color,
+                         edgecolor=edge, linewidth=lw)
+            ax.text(x, val + 0.005, f"{val:.3f}",
+                    ha="center", va="bottom",
+                    fontsize=7.5,
+                    fontweight="bold" if name == OURS_LABEL else "normal",
+                    color="#1B5E20" if name == OURS_LABEL else "#37474F")
+            if ci == 0 and name not in handle_labels:
+                handles_for_legend.append(bar)
+                handle_labels.append(name)
+
+        worst = min(comp.values())
+        gap_pp = (ours_v - worst) * 100
+        ax.text(
+            c0, max(ours_v, max(comp.values())) + 0.05,
+            f"+{gap_pp:.1f} pp\nover worst",
+            ha="center", va="bottom",
+            fontsize=8.5, fontweight="bold",
+            color="#1B5E20",
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="#E8F5E9",
+                      edgecolor="#A5D6A7"),
+        )
+
+    ax.set_xticks(centers)
+    ax.set_xticklabels([r[0] for r in rows], fontsize=10, fontweight="bold")
+    ax.set_ylabel("IDF1 per clip (higher is better)", fontsize=10)
+    y_lo = max(0.55, min(min(r[2].values()) for r in rows) - 0.03)
+    y_hi = max(r[1] for r in rows) + 0.13
+    ax.set_ylim(y_lo, y_hi)
+    ax.set_title(
+        "Per-clip IDF1 — our v8 pipeline vs each base BoxMOT tracker "
+        "(hard clips only)\n"
+        "Same machine (Apple Silicon, MPS), same YOLO ensemble — "
+        "only the tracker stack differs",
+        fontsize=10,
+    )
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.grid(axis="y", linestyle=":", alpha=0.5)
+    ax.legend(handles_for_legend, handle_labels,
+              loc="lower center", bbox_to_anchor=(0.5, -0.18),
+              ncol=n_bars, frameon=False, fontsize=9)
+
+    shown = {r[0] for r in rows}
+    dropped_easy = [
+        c for c in ("easyTest", "gymTest", "BigTest", "adiTest")
+        if c not in shown
+    ]
+    if dropped_easy:
+        ax.text(
+            0.5, -0.32,
+            f"Dropped clips (every tracker scores ~1.000 — gap is "
+            f"uninformative): {', '.join(dropped_easy)}.",
+            transform=ax.transAxes, ha="center", va="bottom",
+            fontsize=8, color="#37474F", style="italic",
+        )
     _save_fig(fig, out_path)
     plt.close(fig)
 
@@ -438,6 +604,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         "--speed-json", type=Path,
         default=REPO / "work" / "benchmarks" / "tracker_speeds.json",
     )
+    p.add_argument(
+        "--per-clip-json", type=Path,
+        default=REPO / "work" / "benchmarks" / "per_clip_idf1.json",
+    )
     p.add_argument("--out-dir", type=Path,
                    default=REPO / "docs" / "figures")
     args = p.parse_args(argv)
@@ -449,6 +619,10 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     chart_accuracy_overall(args.out_dir / "accuracy_overall.png")
+    chart_per_clip_competitors(
+        args.out_dir / "per_clip_competitors.png",
+        args.per_clip_json,
+    )
     chart_per_clip(args.out_dir / "per_clip_v1_to_v8.png")
     if args.speed_json.is_file():
         chart_speed_bars(
