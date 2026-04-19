@@ -1,0 +1,38 @@
+2026-04-18 23:49:58,782 INFO benchmark_trackers: running YOLO multi-scale detection (one-time): /Users/arnavchokshi/Desktop/loveTest/IMG_9265.mov
+2026-04-18 23:50:00,773 INFO tracking.multi_scale_detector: multi-scale detector: weights=/Users/arnavchokshi/Desktop/BEST_ID_STRAT/weights/best.pt imgsz=[768, 1024] conf=0.340 iou=0.700 ensemble_iou=0.60 device=mps classes=[0] tta_flip=False
+2026-04-18 23:51:02,510 INFO benchmark_trackers: detector: 820 frames in 60.4s (13.58 FPS, 73.6 ms/frame)
+2026-04-18 23:51:06,172 INFO benchmark_trackers: wrote detection cache: /Users/arnavchokshi/Desktop/loveTest/IMG_9265.det_cache.pkl
+2026-04-18 23:51:06,380 INFO tracking.multi_scale_detector: multi-scale detector: weights=/Users/arnavchokshi/Desktop/BEST_ID_STRAT/weights/best.pt imgsz=[768, 1024] conf=0.340 iou=0.700 ensemble_iou=0.60 device=mps classes=[0] tta_flip=False
+2026-04-18 23:51:10,066 INFO benchmark_trackers: calibrated detector latency: 73.7 ms/frame on mps
+2026-04-18 23:51:10,066 INFO benchmark_trackers: === benchmarking DeepOcSort (ours, OSNet x0.25) ===
+2026-04-18 23:51:11,214 INFO tracking.deepocsort_runner: installed BoxMOT KalmanFilter cholesky-jitter patch (update_state)
+[32m[1mSUCCESS [0m | [32m[1mDeepOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, delta_t=3, inertia=0.2, w_association_emb=0.5, alpha_fixed_emb=0.95, aw_param=0.5, embedding_off=False, cmc_off=False, aw_off=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 27849] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-18 23:51:46,662 INFO benchmark_trackers:   -> mean=42.8 ms median=39.1 p95=50.0 tracker_fps=23.4 e2e_fps=8.58 unique_ids=20 active/frame=14.3
+2026-04-18 23:51:46,663 INFO benchmark_trackers: === benchmarking BotSort (base) ===
+[32m[1mSUCCESS [0m | [32m[1mBotSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, track_high_thresh=0.5, track_low_thresh=0.1, new_track_thresh=0.6, track_buffer=30, match_thresh=0.8, proximity_thresh=0.5, appearance_thresh=0.25, cmc_method=ecc, frame_rate=30, fuse_first_associate=False, with_reid=True[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 27849] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-18 23:52:48,190 INFO benchmark_trackers:   -> mean=74.6 ms median=50.8 p95=172.4 tracker_fps=13.4 e2e_fps=6.74 unique_ids=18 active/frame=14.3
+2026-04-18 23:52:48,194 INFO benchmark_trackers: === benchmarking StrongSort (base) ===
+[32m[1mSUCCESS [0m | [32m[1mStrongSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, max_cos_dist=0.2, max_iou_dist=0.7, n_init=3, nn_budget=100, mc_lambda=0.98, ema_alpha=0.9[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 27849] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-18 23:54:26,257 INFO benchmark_trackers:   -> mean=119.3 ms median=89.8 p95=293.0 tracker_fps=8.4 e2e_fps=5.18 unique_ids=38 active/frame=14.3
+2026-04-18 23:54:26,260 INFO benchmark_trackers: === benchmarking HybridSort (base) ===
+[32m[1mSUCCESS [0m | [32m[1mHybridSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, cmc_method=ecc, with_reid=True, low_thresh=0.1, delta_t=3, inertia=0.05, use_byte=True, use_custom_kf=True, longterm_bank_length=30, alpha=0.9, adapfs=False, track_thresh=0.5, EG_weight_high_score=4.6, EG_weight_low_score=1.3, TCM_first_step=True, TCM_byte_step=True, TCM_byte_step_weight=1.0, high_score_matching_thresh=0.7, with_longterm_reid=True, longterm_reid_weight=0.0, with_longterm_reid_correction=True, longterm_reid_correction_thresh=0.4, longterm_reid_correction_thresh_low=0.4, dataset=[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 27849] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-18 23:55:14,811 INFO benchmark_trackers:   -> mean=58.9 ms median=46.6 p95=125.0 tracker_fps=17.0 e2e_fps=7.54 unique_ids=18 active/frame=14.3
+2026-04-18 23:55:14,824 INFO benchmark_trackers: === benchmarking ByteTrack (base) ===
+[32m[1mSUCCESS [0m | [32m[1mByteTrack: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, track_thresh=0.45, match_thresh=0.8, track_buffer=25, frame_rate=30[0m
+2026-04-18 23:55:15,916 INFO benchmark_trackers:   -> mean=1.3 ms median=1.2 p95=1.7 tracker_fps=757.5 e2e_fps=13.33 unique_ids=21 active/frame=14.3
+2026-04-18 23:55:15,919 INFO benchmark_trackers: === benchmarking OcSort (base, no ReID) ===
+[32m[1mSUCCESS [0m | [32m[1mOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, delta_t=3, inertia=0.2, use_byte=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+2026-04-18 23:55:17,046 INFO benchmark_trackers:   -> mean=1.4 ms median=1.2 p95=2.0 tracker_fps=729.5 e2e_fps=13.32 unique_ids=19 active/frame=14.3
+2026-04-18 23:55:17,056 INFO benchmark_trackers: wrote work/benchmarks/tracker_speeds.json

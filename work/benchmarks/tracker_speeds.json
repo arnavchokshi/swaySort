@@ -1,0 +1,108 @@
+{
+  "clips": {
+    "loveTest": {
+      "clip": "loveTest",
+      "video": "/Users/arnavchokshi/Desktop/loveTest/IMG_9265.mov",
+      "device": "mps",
+      "n_frames": 820,
+      "detector": {
+        "weights": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/weights/best.pt",
+        "imgsz_ensemble": [
+          768,
+          1024
+        ],
+        "conf": 0.34,
+        "iou": 0.7,
+        "ensemble_iou": 0.6,
+        "ms_per_frame": 73.71,
+        "fps": 13.57
+      },
+      "results": [
+        {
+          "name": "DeepOcSort (ours, OSNet x0.25)",
+          "config": "OSNet x0.25 ReID, max_age=30, BoxMOT defaults + cholesky patch",
+          "n_frames": 820,
+          "total_track_seconds": 35.102,
+          "mean_ms_per_frame": 42.81,
+          "median_ms_per_frame": 39.07,
+          "p95_ms_per_frame": 50.01,
+          "tracker_fps": 23.36,
+          "end_to_end_ms_per_frame": 116.52,
+          "end_to_end_fps": 8.58,
+          "n_unique_tracks": 20,
+          "mean_active_per_frame": 14.26
+        },
+        {
+          "name": "BotSort (base)",
+          "config": "OSNet x0.25 ReID, BoxMOT defaults",
+          "n_frames": 820,
+          "total_track_seconds": 61.186,
+          "mean_ms_per_frame": 74.62,
+          "median_ms_per_frame": 50.75,
+          "p95_ms_per_frame": 172.44,
+          "tracker_fps": 13.4,
+          "end_to_end_ms_per_frame": 148.33,
+          "end_to_end_fps": 6.74,
+          "n_unique_tracks": 18,
+          "mean_active_per_frame": 14.31
+        },
+        {
+          "name": "StrongSort (base)",
+          "config": "OSNet x0.25 ReID, BoxMOT defaults",
+          "n_frames": 820,
+          "total_track_seconds": 97.854,
+          "mean_ms_per_frame": 119.33,
+          "median_ms_per_frame": 89.76,
+          "p95_ms_per_frame": 292.98,
+          "tracker_fps": 8.38,
+          "end_to_end_ms_per_frame": 193.04,
+          "end_to_end_fps": 5.18,
+          "n_unique_tracks": 38,
+          "mean_active_per_frame": 14.29
+        },
+        {
+          "name": "HybridSort (base)",
+          "config": "OSNet x0.25 ReID, BoxMOT defaults",
+          "n_frames": 820,
+          "total_track_seconds": 48.271,
+          "mean_ms_per_frame": 58.87,
+          "median_ms_per_frame": 46.6,
+          "p95_ms_per_frame": 125.04,
+          "tracker_fps": 16.99,
+          "end_to_end_ms_per_frame": 132.58,
+          "end_to_end_fps": 7.54,
+          "n_unique_tracks": 18,
+          "mean_active_per_frame": 14.28
+        },
+        {
+          "name": "ByteTrack (base)",
+          "config": "BoxMOT defaults, no ReID, no appearance",
+          "n_frames": 820,
+          "total_track_seconds": 1.082,
+          "mean_ms_per_frame": 1.32,
+          "median_ms_per_frame": 1.24,
+          "p95_ms_per_frame": 1.7,
+          "tracker_fps": 757.51,
+          "end_to_end_ms_per_frame": 75.03,
+          "end_to_end_fps": 13.33,
+          "n_unique_tracks": 21,
+          "mean_active_per_frame": 14.33
+        },
+        {
+          "name": "OcSort (base, no ReID)",
+          "config": "BoxMOT defaults, no ReID",
+          "n_frames": 820,
+          "total_track_seconds": 1.124,
+          "mean_ms_per_frame": 1.37,
+          "median_ms_per_frame": 1.21,
+          "p95_ms_per_frame": 2.03,
+          "tracker_fps": 729.52,
+          "end_to_end_ms_per_frame": 75.08,
+          "end_to_end_fps": 13.32,
+          "n_unique_tracks": 19,
+          "mean_active_per_frame": 14.27
+        }
+      ]
+    }
+  }
+}

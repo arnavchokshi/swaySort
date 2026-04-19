@@ -1,0 +1,16 @@
+2026-04-18 23:55:43,081 INFO render_tracker_comparison: detection cache hit: /Users/arnavchokshi/Desktop/loveTest/IMG_9265.det_cache.pkl
+2026-04-18 23:55:44,105 INFO render_tracker_comparison: === running our v8 pipeline ===
+2026-04-18 23:55:44,112 INFO tracking.deepocsort_runner: installed BoxMOT KalmanFilter cholesky-jitter patch (update_state)
+[32m[1mSUCCESS [0m | [32m[1mDeepOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, delta_t=3, inertia=0.2, w_association_emb=0.5, alpha_fixed_emb=0.95, aw_param=0.5, embedding_off=False, cmc_off=False, aw_off=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 32429] Found existing ReID weights at /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/yolo+bytetrack/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+2026-04-18 23:56:22,940 INFO render_tracker_comparison: running our v8 post-process chain on 820 frames
+2026-04-18 23:56:22,995 INFO tracking.postprocess: pose-merge: combining ids 15 (frames 84-119) + 16 (frames 206-819) dist=31.9px cos=nan gap=87
+2026-04-18 23:56:22,995 INFO tracking.postprocess: pose-merge: combining ids 2 (frames 0-665) + 25 (frames 763-819) dist=46.8px cos=nan gap=98
+2026-04-18 23:56:23,306 INFO render_tracker_comparison: our pipeline -> 14 final tracks
+2026-04-18 23:56:23,315 INFO render_tracker_comparison: === running base ByteTrack ===
+[32m[1mSUCCESS [0m | [32m[1mByteTrack: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, min_conf=0.1, track_thresh=0.45, match_thresh=0.8, track_buffer=25, frame_rate=30[0m
+2026-04-18 23:56:24,470 INFO render_tracker_comparison: ByteTrack -> 21 unique ids
+2026-04-18 23:56:24,470 INFO render_tracker_comparison: output frame: 1920x540 (each panel 960x540) @ 30.0 fps
+2026-04-18 23:56:35,210 INFO render_tracker_comparison: wrote docs/videos/love_ours_vs_bytetrack.mp4

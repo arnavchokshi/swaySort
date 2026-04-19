@@ -1,0 +1,567 @@
+{
+  "device": "mps",
+  "total_wall_seconds": 511.916,
+  "clips": [
+    {
+      "clip": "BigTest",
+      "video_frames": 480,
+      "wall_seconds": 67.731,
+      "pipe_fps": 7.087,
+      "num_tracks": 14,
+      "tracks": [
+        {
+          "tid": 1,
+          "frames_present": 480,
+          "span": 480,
+          "mean_conf": 0.861
+        },
+        {
+          "tid": 2,
+          "frames_present": 480,
+          "span": 480,
+          "mean_conf": 0.863
+        },
+        {
+          "tid": 3,
+          "frames_present": 480,
+          "span": 480,
+          "mean_conf": 0.875
+        },
+        {
+          "tid": 4,
+          "frames_present": 480,
+          "span": 480,
+          "mean_conf": 0.831
+        },
+        {
+          "tid": 5,
+          "frames_present": 480,
+          "span": 480,
+          "mean_conf": 0.858
+        },
+        {
+          "tid": 6,
+          "frames_present": 475,
+          "span": 480,
+          "mean_conf": 0.839
+        },
+        {
+          "tid": 7,
+          "frames_present": 480,
+          "span": 480,
+          "mean_conf": 0.852
+        },
+        {
+          "tid": 8,
+          "frames_present": 480,
+          "span": 480,
+          "mean_conf": 0.835
+        },
+        {
+          "tid": 20,
+          "frames_present": 190,
+          "span": 190,
+          "mean_conf": 0.854
+        },
+        {
+          "tid": 21,
+          "frames_present": 185,
+          "span": 185,
+          "mean_conf": 0.852
+        },
+        {
+          "tid": 22,
+          "frames_present": 183,
+          "span": 183,
+          "mean_conf": 0.838
+        },
+        {
+          "tid": 24,
+          "frames_present": 161,
+          "span": 161,
+          "mean_conf": 0.905
+        },
+        {
+          "tid": 28,
+          "frames_present": 141,
+          "span": 141,
+          "mean_conf": 0.728
+        },
+        {
+          "tid": 29,
+          "frames_present": 126,
+          "span": 126,
+          "mean_conf": 0.813
+        }
+      ]
+    },
+    {
+      "clip": "mirrorTest",
+      "video_frames": 411,
+      "wall_seconds": 45.902,
+      "pipe_fps": 8.954,
+      "num_tracks": 9,
+      "tracks": [
+        {
+          "tid": 1,
+          "frames_present": 411,
+          "span": 411,
+          "mean_conf": 0.92
+        },
+        {
+          "tid": 2,
+          "frames_present": 411,
+          "span": 411,
+          "mean_conf": 0.927
+        },
+        {
+          "tid": 3,
+          "frames_present": 411,
+          "span": 411,
+          "mean_conf": 0.925
+        },
+        {
+          "tid": 4,
+          "frames_present": 411,
+          "span": 411,
+          "mean_conf": 0.917
+        },
+        {
+          "tid": 5,
+          "frames_present": 411,
+          "span": 411,
+          "mean_conf": 0.88
+        },
+        {
+          "tid": 7,
+          "frames_present": 411,
+          "span": 411,
+          "mean_conf": 0.861
+        },
+        {
+          "tid": 8,
+          "frames_present": 411,
+          "span": 411,
+          "mean_conf": 0.923
+        },
+        {
+          "tid": 9,
+          "frames_present": 411,
+          "span": 411,
+          "mean_conf": 0.905
+        },
+        {
+          "tid": 10,
+          "frames_present": 411,
+          "span": 411,
+          "mean_conf": 0.891
+        }
+      ]
+    },
+    {
+      "clip": "2pplTest",
+      "video_frames": 433,
+      "wall_seconds": 40.995,
+      "pipe_fps": 10.562,
+      "num_tracks": 2,
+      "tracks": [
+        {
+          "tid": 1,
+          "frames_present": 387,
+          "span": 387,
+          "mean_conf": 0.932
+        },
+        {
+          "tid": 2,
+          "frames_present": 387,
+          "span": 387,
+          "mean_conf": 0.924
+        }
+      ]
+    },
+    {
+      "clip": "adiTest",
+      "video_frames": 193,
+      "wall_seconds": 20.16,
+      "pipe_fps": 9.573,
+      "num_tracks": 5,
+      "tracks": [
+        {
+          "tid": 1,
+          "frames_present": 188,
+          "span": 188,
+          "mean_conf": 0.873
+        },
+        {
+          "tid": 2,
+          "frames_present": 188,
+          "span": 188,
+          "mean_conf": 0.865
+        },
+        {
+          "tid": 3,
+          "frames_present": 188,
+          "span": 188,
+          "mean_conf": 0.857
+        },
+        {
+          "tid": 4,
+          "frames_present": 188,
+          "span": 188,
+          "mean_conf": 0.872
+        },
+        {
+          "tid": 5,
+          "frames_present": 188,
+          "span": 188,
+          "mean_conf": 0.876
+        }
+      ]
+    },
+    {
+      "clip": "easyTest",
+      "video_frames": 270,
+      "wall_seconds": 27.786,
+      "pipe_fps": 9.717,
+      "num_tracks": 6,
+      "tracks": [
+        {
+          "tid": 1,
+          "frames_present": 270,
+          "span": 270,
+          "mean_conf": 0.892
+        },
+        {
+          "tid": 2,
+          "frames_present": 270,
+          "span": 270,
+          "mean_conf": 0.888
+        },
+        {
+          "tid": 3,
+          "frames_present": 270,
+          "span": 270,
+          "mean_conf": 0.881
+        },
+        {
+          "tid": 4,
+          "frames_present": 270,
+          "span": 270,
+          "mean_conf": 0.893
+        },
+        {
+          "tid": 5,
+          "frames_present": 270,
+          "span": 270,
+          "mean_conf": 0.89
+        },
+        {
+          "tid": 6,
+          "frames_present": 270,
+          "span": 270,
+          "mean_conf": 0.861
+        }
+      ]
+    },
+    {
+      "clip": "gymTest",
+      "video_frames": 366,
+      "wall_seconds": 38.533,
+      "pipe_fps": 9.498,
+      "num_tracks": 7,
+      "tracks": [
+        {
+          "tid": 1,
+          "frames_present": 366,
+          "span": 366,
+          "mean_conf": 0.864
+        },
+        {
+          "tid": 2,
+          "frames_present": 366,
+          "span": 366,
+          "mean_conf": 0.875
+        },
+        {
+          "tid": 3,
+          "frames_present": 366,
+          "span": 366,
+          "mean_conf": 0.811
+        },
+        {
+          "tid": 4,
+          "frames_present": 366,
+          "span": 366,
+          "mean_conf": 0.818
+        },
+        {
+          "tid": 5,
+          "frames_present": 366,
+          "span": 366,
+          "mean_conf": 0.84
+        },
+        {
+          "tid": 6,
+          "frames_present": 366,
+          "span": 366,
+          "mean_conf": 0.848
+        },
+        {
+          "tid": 7,
+          "frames_present": 366,
+          "span": 366,
+          "mean_conf": 0.851
+        }
+      ]
+    },
+    {
+      "clip": "loveTest",
+      "video_frames": 820,
+      "wall_seconds": 92.413,
+      "pipe_fps": 8.873,
+      "num_tracks": 14,
+      "tracks": [
+        {
+          "tid": 1,
+          "frames_present": 730,
+          "span": 730,
+          "mean_conf": 0.856
+        },
+        {
+          "tid": 2,
+          "frames_present": 820,
+          "span": 820,
+          "mean_conf": 0.836
+        },
+        {
+          "tid": 3,
+          "frames_present": 820,
+          "span": 820,
+          "mean_conf": 0.848
+        },
+        {
+          "tid": 4,
+          "frames_present": 820,
+          "span": 820,
+          "mean_conf": 0.883
+        },
+        {
+          "tid": 5,
+          "frames_present": 820,
+          "span": 820,
+          "mean_conf": 0.884
+        },
+        {
+          "tid": 6,
+          "frames_present": 799,
+          "span": 820,
+          "mean_conf": 0.838
+        },
+        {
+          "tid": 7,
+          "frames_present": 820,
+          "span": 820,
+          "mean_conf": 0.858
+        },
+        {
+          "tid": 8,
+          "frames_present": 820,
+          "span": 820,
+          "mean_conf": 0.834
+        },
+        {
+          "tid": 9,
+          "frames_present": 820,
+          "span": 820,
+          "mean_conf": 0.824
+        },
+        {
+          "tid": 10,
+          "frames_present": 820,
+          "span": 820,
+          "mean_conf": 0.852
+        },
+        {
+          "tid": 11,
+          "frames_present": 803,
+          "span": 820,
+          "mean_conf": 0.835
+        },
+        {
+          "tid": 12,
+          "frames_present": 820,
+          "span": 820,
+          "mean_conf": 0.856
+        },
+        {
+          "tid": 13,
+          "frames_present": 820,
+          "span": 820,
+          "mean_conf": 0.857
+        },
+        {
+          "tid": 14001,
+          "frames_present": 795,
+          "span": 795,
+          "mean_conf": 0.839
+        }
+      ]
+    },
+    {
+      "clip": "shorterTest",
+      "video_frames": 316,
+      "wall_seconds": 33.957,
+      "pipe_fps": 9.306,
+      "num_tracks": 9,
+      "tracks": [
+        {
+          "tid": 1,
+          "frames_present": 307,
+          "span": 307,
+          "mean_conf": 0.905
+        },
+        {
+          "tid": 2,
+          "frames_present": 307,
+          "span": 307,
+          "mean_conf": 0.878
+        },
+        {
+          "tid": 3,
+          "frames_present": 307,
+          "span": 307,
+          "mean_conf": 0.89
+        },
+        {
+          "tid": 4,
+          "frames_present": 307,
+          "span": 307,
+          "mean_conf": 0.885
+        },
+        {
+          "tid": 5,
+          "frames_present": 307,
+          "span": 307,
+          "mean_conf": 0.881
+        },
+        {
+          "tid": 6,
+          "frames_present": 307,
+          "span": 307,
+          "mean_conf": 0.856
+        },
+        {
+          "tid": 7,
+          "frames_present": 307,
+          "span": 307,
+          "mean_conf": 0.863
+        },
+        {
+          "tid": 8,
+          "frames_present": 307,
+          "span": 307,
+          "mean_conf": 0.874
+        },
+        {
+          "tid": 17,
+          "frames_present": 89,
+          "span": 89,
+          "mean_conf": 0.889
+        }
+      ]
+    },
+    {
+      "clip": "MotionTest",
+      "video_frames": 1203,
+      "wall_seconds": 144.3,
+      "pipe_fps": 8.337,
+      "num_tracks": 14,
+      "tracks": [
+        {
+          "tid": 1,
+          "frames_present": 1203,
+          "span": 1203,
+          "mean_conf": 0.914
+        },
+        {
+          "tid": 2,
+          "frames_present": 1136,
+          "span": 1136,
+          "mean_conf": 0.8
+        },
+        {
+          "tid": 3,
+          "frames_present": 1164,
+          "span": 1203,
+          "mean_conf": 0.846
+        },
+        {
+          "tid": 4,
+          "frames_present": 1203,
+          "span": 1203,
+          "mean_conf": 0.827
+        },
+        {
+          "tid": 5,
+          "frames_present": 1203,
+          "span": 1203,
+          "mean_conf": 0.896
+        },
+        {
+          "tid": 6,
+          "frames_present": 942,
+          "span": 1203,
+          "mean_conf": 0.903
+        },
+        {
+          "tid": 7,
+          "frames_present": 1203,
+          "span": 1203,
+          "mean_conf": 0.841
+        },
+        {
+          "tid": 8,
+          "frames_present": 1203,
+          "span": 1203,
+          "mean_conf": 0.858
+        },
+        {
+          "tid": 9,
+          "frames_present": 1203,
+          "span": 1203,
+          "mean_conf": 0.873
+        },
+        {
+          "tid": 10,
+          "frames_present": 1203,
+          "span": 1203,
+          "mean_conf": 0.851
+        },
+        {
+          "tid": 11,
+          "frames_present": 1165,
+          "span": 1165,
+          "mean_conf": 0.813
+        },
+        {
+          "tid": 12,
+          "frames_present": 1203,
+          "span": 1203,
+          "mean_conf": 0.892
+        },
+        {
+          "tid": 13,
+          "frames_present": 1203,
+          "span": 1203,
+          "mean_conf": 0.848
+        },
+        {
+          "tid": 14,
+          "frames_present": 1203,
+          "span": 1203,
+          "mean_conf": 0.766
+        }
+      ]
+    }
+  ]
+}

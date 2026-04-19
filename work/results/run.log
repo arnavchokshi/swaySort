@@ -1,0 +1,56 @@
+[1/9] START BigTest  frames=480 fps=30.0 res=1280x720 video=/Users/arnavchokshi/Desktop/BigTest/BigTest.mov
+[32m[1mSUCCESS [0m | [32m[1mDeepOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, delta_t=3, inertia=0.2, w_association_emb=0.5, alpha_fixed_emb=0.95, aw_param=0.5, embedding_off=False, cmc_off=False, aw_off=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 15629] Found existing ReID weights at /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1/9] DONE  BigTest  status=ok wall=67.7s tracks=14 pipe_fps=7.09
+[2/9] START mirrorTest  frames=411 fps=29.8 res=1280x720 video=/Users/arnavchokshi/Desktop/mirrorTest/IMG_2946.MP4
+[32m[1mSUCCESS [0m | [32m[1mDeepOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, delta_t=3, inertia=0.2, w_association_emb=0.5, alpha_fixed_emb=0.95, aw_param=0.5, embedding_off=False, cmc_off=False, aw_off=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 15629] Found existing ReID weights at /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[2/9] DONE  mirrorTest  status=ok wall=45.9s tracks=9 pipe_fps=8.95
+[3/9] START 2pplTest  frames=433 fps=29.9 res=576x1024 video=/Users/arnavchokshi/Desktop/2pplTest/2pplTest.mov
+[32m[1mSUCCESS [0m | [32m[1mDeepOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, delta_t=3, inertia=0.2, w_association_emb=0.5, alpha_fixed_emb=0.95, aw_param=0.5, embedding_off=False, cmc_off=False, aw_off=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 15629] Found existing ReID weights at /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[3/9] DONE  2pplTest  status=ok wall=41.0s tracks=2 pipe_fps=10.56
+[4/9] START adiTest  frames=193 fps=29.8 res=1280x720 video=/Users/arnavchokshi/Desktop/adiTest/IMG_1649.mov
+[32m[1mSUCCESS [0m | [32m[1mDeepOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, delta_t=3, inertia=0.2, w_association_emb=0.5, alpha_fixed_emb=0.95, aw_param=0.5, embedding_off=False, cmc_off=False, aw_off=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 15629] Found existing ReID weights at /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[4/9] DONE  adiTest  status=ok wall=20.2s tracks=5 pipe_fps=9.57
+[5/9] START easyTest  frames=270 fps=29.8 res=1280x720 video=/Users/arnavchokshi/Desktop/easyTest/IMG_2082.mov
+[32m[1mSUCCESS [0m | [32m[1mDeepOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, delta_t=3, inertia=0.2, w_association_emb=0.5, alpha_fixed_emb=0.95, aw_param=0.5, embedding_off=False, cmc_off=False, aw_off=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 15629] Found existing ReID weights at /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[5/9] DONE  easyTest  status=ok wall=27.8s tracks=6 pipe_fps=9.72
+[6/9] START gymTest  frames=366 fps=30.0 res=1280x720 video=/Users/arnavchokshi/Desktop/gymTest/IMG_8309.mov
+[32m[1mSUCCESS [0m | [32m[1mDeepOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, delta_t=3, inertia=0.2, w_association_emb=0.5, alpha_fixed_emb=0.95, aw_param=0.5, embedding_off=False, cmc_off=False, aw_off=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 15629] Found existing ReID weights at /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[6/9] DONE  gymTest  status=ok wall=38.5s tracks=7 pipe_fps=9.50
+[7/9] START loveTest  frames=820 fps=29.9 res=1280x720 video=/Users/arnavchokshi/Desktop/loveTest/IMG_9265.mov
+[32m[1mSUCCESS [0m | [32m[1mDeepOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, delta_t=3, inertia=0.2, w_association_emb=0.5, alpha_fixed_emb=0.95, aw_param=0.5, embedding_off=False, cmc_off=False, aw_off=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 15629] Found existing ReID weights at /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[7/9] DONE  loveTest  status=ok wall=92.4s tracks=14 pipe_fps=8.87
+[8/9] START shorterTest  frames=316 fps=29.4 res=1280x720 video=/Users/arnavchokshi/Desktop/shorterTest/TestVideo.mov
+[32m[1mSUCCESS [0m | [32m[1mDeepOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, delta_t=3, inertia=0.2, w_association_emb=0.5, alpha_fixed_emb=0.95, aw_param=0.5, embedding_off=False, cmc_off=False, aw_off=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 15629] Found existing ReID weights at /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[8/9] DONE  shorterTest  status=ok wall=34.0s tracks=9 pipe_fps=9.31
+[9/9] START MotionTest  frames=1203 fps=30.0 res=1280x720 video=/Users/arnavchokshi/Desktop/MotionTest/IMG_4716.mov
+[32m[1mSUCCESS [0m | [32m[1mDeepOcSort: det_thresh=0.3, max_age=30, max_obs=50, min_hits=3, iou_threshold=0.3, per_class=False, asso_func=iou, delta_t=3, inertia=0.2, w_association_emb=0.5, alpha_fixed_emb=0.95, aw_param=0.5, embedding_off=False, cmc_off=False, aw_off=False, Q_xy_scaling=0.01, Q_s_scaling=0.0001[0m
+[1mINFO    [0m | [1m/Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[1mINFO    [0m | [1m[PID 15629] Found existing ReID weights at /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt; skipping download.[0m
+[32m[1mSUCCESS [0m | [32m[1mLoaded pretrained weights from /Users/arnavchokshi/Desktop/BEST_ID_STRAT/.venv/lib/python3.11/site-packages/models/osnet_x0_25_msmt17.pt[0m
+[9/9] DONE  MotionTest  status=ok wall=144.3s tracks=14 pipe_fps=8.34
+
+ALL DONE.  total wall = 511.9s (8.5 min)

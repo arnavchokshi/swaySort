@@ -1,0 +1,123 @@
+{
+  "device": "mps",
+  "total_wall_seconds": 511.916,
+  "results": [
+    {
+      "clip": "BigTest",
+      "status": "ok",
+      "video": "/Users/arnavchokshi/Desktop/BigTest/BigTest.mov",
+      "frames": 480,
+      "fps_video": 30.0,
+      "width": 1280,
+      "height": 720,
+      "wall_seconds": 67.731,
+      "fps_pipeline": 7.087,
+      "num_tracks": 14,
+      "out_pkl": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/BigTest/tracks.pkl"
+    },
+    {
+      "clip": "mirrorTest",
+      "status": "ok",
+      "video": "/Users/arnavchokshi/Desktop/mirrorTest/IMG_2946.MP4",
+      "frames": 411,
+      "fps_video": 29.843882367178992,
+      "width": 1280,
+      "height": 720,
+      "wall_seconds": 45.902,
+      "fps_pipeline": 8.954,
+      "num_tracks": 9,
+      "out_pkl": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/mirrorTest/tracks.pkl"
+    },
+    {
+      "clip": "2pplTest",
+      "status": "ok",
+      "video": "/Users/arnavchokshi/Desktop/2pplTest/2pplTest.mov",
+      "frames": 433,
+      "fps_video": 29.91014651784028,
+      "width": 576,
+      "height": 1024,
+      "wall_seconds": 40.995,
+      "fps_pipeline": 10.562,
+      "num_tracks": 2,
+      "out_pkl": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/2pplTest/tracks.pkl"
+    },
+    {
+      "clip": "adiTest",
+      "status": "ok",
+      "video": "/Users/arnavchokshi/Desktop/adiTest/IMG_1649.mov",
+      "frames": 193,
+      "fps_video": 29.822302343548802,
+      "width": 1280,
+      "height": 720,
+      "wall_seconds": 20.16,
+      "fps_pipeline": 9.573,
+      "num_tracks": 5,
+      "out_pkl": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/adiTest/tracks.pkl"
+    },
+    {
+      "clip": "easyTest",
+      "status": "ok",
+      "video": "/Users/arnavchokshi/Desktop/easyTest/IMG_2082.mov",
+      "frames": 270,
+      "fps_video": 29.773938614225326,
+      "width": 1280,
+      "height": 720,
+      "wall_seconds": 27.786,
+      "fps_pipeline": 9.717,
+      "num_tracks": 6,
+      "out_pkl": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/easyTest/tracks.pkl"
+    },
+    {
+      "clip": "gymTest",
+      "status": "ok",
+      "video": "/Users/arnavchokshi/Desktop/gymTest/IMG_8309.mov",
+      "frames": 366,
+      "fps_video": 30.0,
+      "width": 1280,
+      "height": 720,
+      "wall_seconds": 38.533,
+      "fps_pipeline": 9.498,
+      "num_tracks": 7,
+      "out_pkl": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/gymTest/tracks.pkl"
+    },
+    {
+      "clip": "loveTest",
+      "status": "ok",
+      "video": "/Users/arnavchokshi/Desktop/loveTest/IMG_9265.mov",
+      "frames": 820,
+      "fps_video": 29.914270079649786,
+      "width": 1280,
+      "height": 720,
+      "wall_seconds": 92.413,
+      "fps_pipeline": 8.873,
+      "num_tracks": 14,
+      "out_pkl": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/loveTest/tracks.pkl"
+    },
+    {
+      "clip": "shorterTest",
+      "status": "ok",
+      "video": "/Users/arnavchokshi/Desktop/shorterTest/TestVideo.mov",
+      "frames": 316,
+      "fps_video": 29.363481492953383,
+      "width": 1280,
+      "height": 720,
+      "wall_seconds": 33.957,
+      "fps_pipeline": 9.306,
+      "num_tracks": 9,
+      "out_pkl": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/shorterTest/tracks.pkl"
+    },
+    {
+      "clip": "MotionTest",
+      "status": "ok",
+      "video": "/Users/arnavchokshi/Desktop/MotionTest/IMG_4716.mov",
+      "frames": 1203,
+      "fps_video": 29.990028253282368,
+      "width": 1280,
+      "height": 720,
+      "wall_seconds": 144.3,
+      "fps_pipeline": 8.337,
+      "num_tracks": 14,
+      "out_pkl": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/results/MotionTest/tracks.pkl"
+    }
+  ]
+}

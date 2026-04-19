@@ -1,0 +1,23 @@
+{
+  "_doc": "Production best-pipeline config. Read by tracking.best_pipeline.build_tracks. Knobs originally chosen by an Optuna sweep across the 7-clip benchmark; see docs/PIPELINE_SPEC.md and docs/EXPERIMENTS_LOG.md for provenance. The production code overrides pp_min_total_frames (60 -> 20), pp_id_merge_max_gap (8 -> 48), and pp_id_merge_iou_thresh (0.5 -> 0.10) at the call-site -- the constants live in tracking/best_pipeline.py.",
+
+  "best_pipeline_cfg": {
+    "pp_min_total_frames": 60,
+    "pp_min_conf": 0.38,
+    "pp_id_merge_max_gap": 8,
+    "pp_id_merge_iou_thresh": 0.5,
+    "pp_id_merge_osnet_cos_thresh": 0.7,
+    "pp_gaussian_sigma": 3.0,
+    "pp_max_gap_interp": 12,
+    "pp_medfilt_window": 11,
+    "pp_num_max_people": 25,
+    "pp_overlap_merge_iou_thresh": 0.7,
+    "pp_overlap_merge_min_frames": 5,
+    "pp_edge_trim_conf_thresh": 0.0,
+    "pp_edge_trim_max_frames": 0,
+    "pp_pose_cos_thresh": 0.0,
+    "pp_pose_max_gap": 120,
+    "pp_pose_min_iou_for_pair": 0.0,
+    "pp_pose_max_center_dist": 150.0
+  }
+}

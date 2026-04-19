@@ -1,0 +1,3 @@
+[tool.pytest.ini_options]
+addopts = "-p no:hydra --import-mode=importlib"
+norecursedirs = [".venv", "venv", "weights", "docs"]
