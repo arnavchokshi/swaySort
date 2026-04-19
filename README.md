@@ -148,6 +148,25 @@ on any individual clip**.
 
 **End-to-end: ~1–1.5 minutes per minute of dance video on an A100.**
 
+#### Optional speed flags (lossless)
+
+Four env-var-gated optimizations ship in the repo. Default behavior with
+none set is exactly the historical v8 pipeline; every flag has been
+verified to leave the `FrameDetections` cache and `tracks.pkl` output
+bit-identical (or, for TensorRT, within FP32 cudnn-noise tolerance) by
+`scripts/regression_check.py`.
+
+| Env var | Effect | Validated headroom |
+|---|---|---|
+| `BEST_ID_PREFETCH=4` | Decodes frame N+1 in a background thread while detect+track runs on N. | +6 % wall on MPS, more on slower-decode hardware |
+| `BEST_ID_PIPELINE_PARALLEL=1` | One-frame detector look-ahead so `tracker.update(N)` overlaps with `detect(N+1)`. | +13 % wall on MPS solo |
+| `BEST_ID_GPU_NMS=1` | Keeps cross-scale boxes/conf on the model device for the ensemble NMS. | Bit-identical, -14 % on MPS (no native NMS kernel), +5–10 % expected on CUDA |
+| `BEST_ID_TRT_ENGINE_DIR=weights/` | Loads `<stem>_768.engine` + `<stem>_1024.engine` instead of `.pt`. Build them once with `python scripts/export_yolo_trt.py`. | NVIDIA-only; +30–40 % expected on A100 |
+
+The two CPU-side flags compose for a measured **+13.8 % wall-clock cut
+on 500 frames of `loveTest` (MPS), bit-identical cache and tracks**.
+Recommended A100 stack: all four enabled at once.
+
 ### Apple Silicon (MPS) — fair head-to-head against alternative trackers
 
 We re-ran every tracker against **the same cached YOLO multi-scale
@@ -199,18 +218,28 @@ is BoxMOT's premium appearance-based tracker (Kalman + ECC + linear
 assignment + the *same* OSNet ReID head we use), so this comparison
 isolates exactly what the post-process chain buys you.
 
-![Ours vs base StrongSort on loveTest — full 27-second preview](docs/videos/love_ours_vs_strongsort_preview.gif)
+The clip below is the **densest 7 seconds of identity chaos in the
+entire video** (frames 467–676, t = 15.6–22.6 s — picked by sliding
+a 7-s window over the per-frame `SWITCH` events from
+`py-motmetrics`). It's slowed to ~10 s playback so each swap is
+visible. The big red counter in the bottom strip is the **live
+identity-switch count** — it ticks up *exactly* when `motmetrics`
+records a `SWITCH` event, and the panel border flashes red on every
+swap frame. **In this 7-second window: ours = 0 swaps, StrongSort =
+21 swaps.** The other 5 of StrongSort's 26 total swaps happen
+elsewhere in the clip; ours' single swap is at frame 26, two
+seconds into the video.
 
-Full-quality MP4:
+![Ours vs base StrongSort on loveTest — densest 7-second window, slowed to 10s](docs/videos/love_ours_vs_strongsort_preview.gif)
+
+Full-quality MP4 of the same window:
 [`docs/videos/love_ours_vs_strongsort.mp4`](docs/videos/love_ours_vs_strongsort.mp4).
 Each bounding box is colored by track ID — **stable colors across
-frames = stable identity, every color flip is an identity swap the
-tracker never recovered from.**
+frames = stable identity, every color flip is an identity swap.**
 
-What to look for (live counters in the top-right of each panel —
-numbers verified against `work/benchmarks/per_clip_idf1.json`):
+Whole-clip totals (820 frames, GT = 15 dancers):
 
-| Metric (whole 820-frame clip, GT = 15 dancers) | Ours | Base StrongSort | Delta |
+| Metric | Ours | Base StrongSort | Delta |
 |---|---:|---:|---:|
 | Final unique IDs in the prediction | **14** | 38 | 2.7× more IDs than real dancers |
 | Average track lifetime | **809 frames** | 308 frames | StrongSort tracks live 1/3 as long |
@@ -218,16 +247,16 @@ numbers verified against `work/benchmarks/per_clip_idf1.json`):
 | Fragmentations (`num_fragmentations`) | **52** | 209 | 4× more fragmentations |
 | IDF1 | **0.836** | 0.749 | **+8.7 pp** |
 
-The visible chaos on the right side is StrongSort's tracker
-flickering its ID space *constantly* — every time two dancers
-occlude, StrongSort's appearance-cosine assignment misroutes the box
-and creates a new ID, which then never gets re-merged. Our pipeline
-uses the same OSNet head but adds (a) an OSNet-cosine-gated
-ID-merge stage that re-stitches re-emerging dancers back to their
-original ID, and (b) a post-merge AND-gate that kills the spurious
-short tracks before they ever reach the IDF1 scorer. **That's the
-+8.7-pp gap, in pure post-process.** No model retraining, no
-heavier ReID head — just the chain documented in
+The chaos on the right side is StrongSort's tracker flickering its
+ID space *constantly* — every time two dancers occlude, StrongSort's
+appearance-cosine assignment misroutes the box and creates a new
+ID, which then never gets re-merged. Our pipeline uses the same
+OSNet head but adds (a) an OSNet-cosine-gated ID-merge stage that
+re-stitches re-emerging dancers back to their original ID, and (b)
+a post-merge AND-gate that kills the spurious short tracks before
+they ever reach the IDF1 scorer. **That's the +8.7-pp gap, in pure
+post-process.** No model retraining, no heavier ReID head — just
+the chain documented in
 [`docs/PIPELINE_SPEC.md`](docs/PIPELINE_SPEC.md).
 
 ---
