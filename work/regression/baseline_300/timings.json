@@ -1,0 +1,16 @@
+{
+  "video": "/Users/arnavchokshi/Desktop/loveTest/IMG_9265.mov",
+  "device": "mps",
+  "max_frames": 300,
+  "wall_seconds": 36.0655,
+  "n_frames": 300,
+  "n_tracks": 14,
+  "fps": 8.318,
+  "ms_per_frame": 120.218,
+  "opts": {
+    "BEST_ID_GPU_NMS": "",
+    "BEST_ID_PREFETCH": "",
+    "BEST_ID_PIPELINE_PARALLEL": "",
+    "BEST_ID_TRT_ENGINE": ""
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "_doc": "Tier-2 final v9 finalists sweep across all 9 clips (incl. darkTest). Stacks the validated winners from prior overnight sweeps to find the best production v9 pipeline. Winners we are stacking: (a) dark_v9 = CLAHE + auto gamma -- mean +0.0056, darkTest +0.0502 (validated in v9_stack_validation), (b) sam_stride1 = SAM 2.1 verifier on every box -- mean +0.0023, darkTest +0.0185, loveTest +0.0082 (validated in sam_verifier_v1), (c) pose_min_vis_strict = RTMW pose-merge gate with min_vis=0.5 -- mean +0.0003, MotionTest +0.0027 (validated in rtmw_pose_merge_v1).\n\nCRITICAL CAVEAT: The darktest_push_v1 sweep showed dark_v9 + sam_stride1 on darkTest = 0.6931 (vs dark_v9 alone = 0.7027), so they NEGATIVELY interact on darkTest. We test the full 9-clip mean here to see if loveTest/other gains outweigh the darkTest loss.",
+  "variants": [
+    {"name": "v8_baseline",                       "env": {},                                                                                                          "notes": "v8 control"},
+
+    {"name": "v9_dark",                           "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto"},                                                    "notes": "current v9 default (validated +0.0056 mean)"},
+
+    {"name": "v9_dark_plus_sam",                  "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_STRIDE": "1"}, "notes": "v9 + SAM stride=1 (test stacking)"},
+
+    {"name": "v9_dark_plus_pose",                 "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_POSE_MERGE": "1", "BEST_ID_POSE_MERGE_MIN_VIS": "0.50"}, "notes": "v9 + pose-merge strict-vis (MotionTest +0.0027)"},
+
+    {"name": "v9_dark_plus_sam_plus_pose",        "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_STRIDE": "1", "BEST_ID_POSE_MERGE": "1", "BEST_ID_POSE_MERGE_MIN_VIS": "0.50"}, "notes": "max-combo: v9 + SAM + pose"}
+  ]
+}

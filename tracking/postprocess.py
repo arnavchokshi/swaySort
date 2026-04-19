@@ -516,11 +516,11 @@ def _id_merge_pose_pass(
             frame_bgr = frame_loader(frame_id)  # type: ignore[misc]
         except Exception as exc:
             log.debug("pose-merge: frame_loader(%d) raised %s", frame_id, exc)
-            feat_cache[key] = np.zeros((17, 3), dtype=np.float32)
-            return feat_cache[key]
+            feat_cache[key] = None
+            return None
         if frame_bgr is None:
-            feat_cache[key] = np.zeros((17, 3), dtype=np.float32)
-            return feat_cache[key]
+            feat_cache[key] = None
+            return None
         feat = pose_extractor.extract(frame_bgr, np.asarray(bbox, dtype=np.float32))  # type: ignore[union-attr]
         feat_cache[key] = feat
         return feat

@@ -40,6 +40,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import os
 import sys
 import time
@@ -252,8 +253,30 @@ def _ours_tracks_to_mot_rows(tracks_pkl: Path) -> List[str]:
     return rows
 
 
+def _scrub_nan(d: Dict[str, float]) -> Dict[str, Optional[float]]:
+    """Replace NaN/+/-Inf with None so json.dumps emits valid JSON."""
+    out: Dict[str, Optional[float]] = {}
+    for k, v in d.items():
+        try:
+            fv = float(v)
+        except (TypeError, ValueError):
+            out[k] = None
+            continue
+        if math.isnan(fv) or math.isinf(fv):
+            out[k] = None
+        else:
+            out[k] = fv
+    return out
+
+
 def _score(pred_rows: List[str], gt_path: Path) -> Dict[str, float]:
-    """py-motmetrics CLEAR + ID at IoU 0.5, plus a few derived metrics."""
+    """py-motmetrics CLEAR + ID at IoU 0.5, plus a few derived metrics.
+
+    `num_predicted_unique_objects` is computed manually from the MOT
+    rows (py-motmetrics 1.4.0 doesn't expose it as a metric name; the
+    closest exposed value is `num_predictions`, which is the total
+    number of bbox rows, not unique track IDs).
+    """
     import io
     import motmetrics as mm
 
@@ -268,7 +291,7 @@ def _score(pred_rows: List[str], gt_path: Path) -> Dict[str, float]:
         "num_switches", "num_fragmentations",
         "num_misses", "num_false_positives",
         "mostly_tracked", "partially_tracked", "mostly_lost",
-        "num_unique_objects", "num_predicted_unique_objects",
+        "num_unique_objects", "num_predictions",
         "num_frames",
     ]
     summary = mh.compute(acc, metrics=names, name="seq")
@@ -278,7 +301,18 @@ def _score(pred_rows: List[str], gt_path: Path) -> Dict[str, float]:
             out[n] = float(summary[n].iloc[0])
         except Exception:
             out[n] = float("nan")
-    return out
+
+    # Count unique predicted track IDs from the raw MOT rows.
+    pred_tids = set()
+    for line in pred_rows:
+        if not line.strip():
+            continue
+        try:
+            pred_tids.add(int(line.split(",", 2)[1]))
+        except (IndexError, ValueError):
+            continue
+    out["num_predicted_unique_objects"] = float(len(pred_tids))
+    return _scrub_nan(out)
 
 
 # ---------------------------------------------------------------------------
@@ -399,6 +433,11 @@ def _run_one_clip(
             run.tracker_ms_per_frame_mean, gpu_mb,
         )
 
+    # Pipeline + baseline trackers see the same frame range (both capped
+    # by --max-frames in smoke mode, both full-video in production), so
+    # reuse the count from the cache for the Ours wall-clock FPS calc.
+    n_frames_processed = len(frames_cache)
+
     # Free cached frames (each is ~6 GB for 1080p; let GC run before
     # we spin up the shipped pipeline which loads its own frames).
     del frames_cache
@@ -430,20 +469,19 @@ def _run_one_clip(
         "\n".join(ours_rows_mot) + ("\n" if ours_rows_mot else "")
     )
     metrics = _score(ours_rows_mot, gt_path)
-    n_frames = int(metrics.get("num_frames", 0))
     rows[OURS_LABEL] = TrackerRun(
         row=OURS_LABEL,
         detector=("weights/best.pt multi-scale {768,1024} ensemble, "
                   "conf=0.34, ensemble_iou=0.6, dark-recovery v9"),
         tracker_config=("DeepOcSort + OSNet x0.25 + Kalman jitter "
                         "patch + full v9 post-process chain"),
-        n_frames=n_frames,
+        n_frames=n_frames_processed,
         wall_seconds=round(wall, 3),
         det_ms_per_frame_mean=0.0,  # not separately measured for shipped path
         tracker_ms_per_frame_mean=0.0,
         tracker_ms_per_frame_median=0.0,
         tracker_ms_per_frame_p95=0.0,
-        end_to_end_fps=round(n_frames / max(wall, 1e-6), 2),
+        end_to_end_fps=round(n_frames_processed / max(wall, 1e-6), 2),
         gpu_peak_mb=round(gpu_mb, 1),
         metrics=metrics,
     )

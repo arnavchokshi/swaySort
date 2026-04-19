@@ -1,0 +1,862 @@
+[
+  {
+    "variant": "baseline",
+    "env": {},
+    "mean_idf1": 0.9207711084188731,
+    "mean_mota": 0.8770817362459247,
+    "num_switches_total": 27.0,
+    "num_misses_total": 5875.0,
+    "num_false_positives_total": 4314.0,
+    "per_clip": {
+      "BigTest": {
+        "idf1": 0.9981450948062655,
+        "mota": 0.9962947715109098,
+        "num_switches": 0.0,
+        "num_misses": 15.0,
+        "num_false_positives": 3.0,
+        "pipeline_seconds": 25.572
+      },
+      "mirrorTest": {
+        "idf1": 0.9932414165990808,
+        "mota": 0.9864828331981617,
+        "num_switches": 2.0,
+        "num_misses": 24.0,
+        "num_false_positives": 24.0,
+        "pipeline_seconds": 17.055
+      },
+      "adiTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 7.303
+      },
+      "easyTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 10.973
+      },
+      "gymTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 14.875
+      },
+      "loveTest": {
+        "idf1": 0.849410073159386,
+        "mota": 0.7121951219512195,
+        "num_switches": 1.0,
+        "num_misses": 2246.0,
+        "num_false_positives": 1293.0,
+        "pipeline_seconds": 36.327
+      },
+      "shorterTest": {
+        "idf1": 0.8624141315014721,
+        "mota": 0.8383918013401656,
+        "num_switches": 1.0,
+        "num_misses": 194.0,
+        "num_false_positives": 215.0,
+        "pipeline_seconds": 13.421
+      },
+      "MotionTest": {
+        "idf1": 0.9311680124876175,
+        "mota": 0.863852274076713,
+        "num_switches": 0.0,
+        "num_misses": 1332.0,
+        "num_false_positives": 961.0,
+        "pipeline_seconds": 52.816
+      },
+      "darkTest": {
+        "idf1": 0.6525612472160356,
+        "mota": 0.49651882413615267,
+        "num_switches": 23.0,
+        "num_misses": 2064.0,
+        "num_false_positives": 1818.0,
+        "pipeline_seconds": 24.042
+      }
+    }
+  },
+  {
+    "variant": "pose_default",
+    "env": {
+      "BEST_ID_POSE_MERGE": "1"
+    },
+    "mean_idf1": 0.9207711084188731,
+    "mean_mota": 0.8770817362459247,
+    "num_switches_total": 27.0,
+    "num_misses_total": 5875.0,
+    "num_false_positives_total": 4314.0,
+    "per_clip": {
+      "BigTest": {
+        "idf1": 0.9981450948062655,
+        "mota": 0.9962947715109098,
+        "num_switches": 0.0,
+        "num_misses": 15.0,
+        "num_false_positives": 3.0,
+        "pipeline_seconds": 19.97
+      },
+      "mirrorTest": {
+        "idf1": 0.9932414165990808,
+        "mota": 0.9864828331981617,
+        "num_switches": 2.0,
+        "num_misses": 24.0,
+        "num_false_positives": 24.0,
+        "pipeline_seconds": 16.902
+      },
+      "adiTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 7.287
+      },
+      "easyTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 10.468
+      },
+      "gymTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 15.141
+      },
+      "loveTest": {
+        "idf1": 0.849410073159386,
+        "mota": 0.7121951219512195,
+        "num_switches": 1.0,
+        "num_misses": 2246.0,
+        "num_false_positives": 1293.0,
+        "pipeline_seconds": 37.554
+      },
+      "shorterTest": {
+        "idf1": 0.8624141315014721,
+        "mota": 0.8383918013401656,
+        "num_switches": 1.0,
+        "num_misses": 194.0,
+        "num_false_positives": 215.0,
+        "pipeline_seconds": 13.122
+      },
+      "MotionTest": {
+        "idf1": 0.9311680124876175,
+        "mota": 0.863852274076713,
+        "num_switches": 0.0,
+        "num_misses": 1332.0,
+        "num_false_positives": 961.0,
+        "pipeline_seconds": 54.142
+      },
+      "darkTest": {
+        "idf1": 0.6525612472160356,
+        "mota": 0.49651882413615267,
+        "num_switches": 23.0,
+        "num_misses": 2064.0,
+        "num_false_positives": 1818.0,
+        "pipeline_seconds": 24.522
+      }
+    }
+  },
+  {
+    "variant": "pose_thresh_low",
+    "env": {
+      "BEST_ID_POSE_MERGE": "1",
+      "BEST_ID_POSE_MERGE_THRESH": "0.40"
+    },
+    "mean_idf1": 0.9207711084188731,
+    "mean_mota": 0.8770817362459247,
+    "num_switches_total": 27.0,
+    "num_misses_total": 5875.0,
+    "num_false_positives_total": 4314.0,
+    "per_clip": {
+      "BigTest": {
+        "idf1": 0.9981450948062655,
+        "mota": 0.9962947715109098,
+        "num_switches": 0.0,
+        "num_misses": 15.0,
+        "num_false_positives": 3.0,
+        "pipeline_seconds": 20.472
+      },
+      "mirrorTest": {
+        "idf1": 0.9932414165990808,
+        "mota": 0.9864828331981617,
+        "num_switches": 2.0,
+        "num_misses": 24.0,
+        "num_false_positives": 24.0,
+        "pipeline_seconds": 17.2
+      },
+      "adiTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 7.533
+      },
+      "easyTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 10.546
+      },
+      "gymTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 15.178
+      },
+      "loveTest": {
+        "idf1": 0.849410073159386,
+        "mota": 0.7121951219512195,
+        "num_switches": 1.0,
+        "num_misses": 2246.0,
+        "num_false_positives": 1293.0,
+        "pipeline_seconds": 38.512
+      },
+      "shorterTest": {
+        "idf1": 0.8624141315014721,
+        "mota": 0.8383918013401656,
+        "num_switches": 1.0,
+        "num_misses": 194.0,
+        "num_false_positives": 215.0,
+        "pipeline_seconds": 13.583
+      },
+      "MotionTest": {
+        "idf1": 0.9311680124876175,
+        "mota": 0.863852274076713,
+        "num_switches": 0.0,
+        "num_misses": 1332.0,
+        "num_false_positives": 961.0,
+        "pipeline_seconds": 54.047
+      },
+      "darkTest": {
+        "idf1": 0.6525612472160356,
+        "mota": 0.49651882413615267,
+        "num_switches": 23.0,
+        "num_misses": 2064.0,
+        "num_false_positives": 1818.0,
+        "pipeline_seconds": 24.475
+      }
+    }
+  },
+  {
+    "variant": "pose_thresh_high",
+    "env": {
+      "BEST_ID_POSE_MERGE": "1",
+      "BEST_ID_POSE_MERGE_THRESH": "0.60"
+    },
+    "mean_idf1": 0.9207711084188731,
+    "mean_mota": 0.8770817362459247,
+    "num_switches_total": 27.0,
+    "num_misses_total": 5875.0,
+    "num_false_positives_total": 4314.0,
+    "per_clip": {
+      "BigTest": {
+        "idf1": 0.9981450948062655,
+        "mota": 0.9962947715109098,
+        "num_switches": 0.0,
+        "num_misses": 15.0,
+        "num_false_positives": 3.0,
+        "pipeline_seconds": 20.578
+      },
+      "mirrorTest": {
+        "idf1": 0.9932414165990808,
+        "mota": 0.9864828331981617,
+        "num_switches": 2.0,
+        "num_misses": 24.0,
+        "num_false_positives": 24.0,
+        "pipeline_seconds": 17.409
+      },
+      "adiTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 7.91
+      },
+      "easyTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 10.789
+      },
+      "gymTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 15.308
+      },
+      "loveTest": {
+        "idf1": 0.849410073159386,
+        "mota": 0.7121951219512195,
+        "num_switches": 1.0,
+        "num_misses": 2246.0,
+        "num_false_positives": 1293.0,
+        "pipeline_seconds": 37.385
+      },
+      "shorterTest": {
+        "idf1": 0.8624141315014721,
+        "mota": 0.8383918013401656,
+        "num_switches": 1.0,
+        "num_misses": 194.0,
+        "num_false_positives": 215.0,
+        "pipeline_seconds": 13.236
+      },
+      "MotionTest": {
+        "idf1": 0.9311680124876175,
+        "mota": 0.863852274076713,
+        "num_switches": 0.0,
+        "num_misses": 1332.0,
+        "num_false_positives": 961.0,
+        "pipeline_seconds": 54.29
+      },
+      "darkTest": {
+        "idf1": 0.6525612472160356,
+        "mota": 0.49651882413615267,
+        "num_switches": 23.0,
+        "num_misses": 2064.0,
+        "num_false_positives": 1818.0,
+        "pipeline_seconds": 24.588
+      }
+    }
+  },
+  {
+    "variant": "pose_hand_heavy",
+    "env": {
+      "BEST_ID_POSE_MERGE": "1",
+      "BEST_ID_POSE_MERGE_HAND_W": "0.60",
+      "BEST_ID_POSE_MERGE_BODY_W": "0.30",
+      "BEST_ID_POSE_MERGE_FACE_W": "0.10"
+    },
+    "mean_idf1": 0.9210741623275839,
+    "mean_mota": 0.8777282680645264,
+    "num_switches_total": 27.0,
+    "num_misses_total": 5880.0,
+    "num_false_positives_total": 4211.0,
+    "per_clip": {
+      "BigTest": {
+        "idf1": 0.9981450948062655,
+        "mota": 0.9962947715109098,
+        "num_switches": 0.0,
+        "num_misses": 15.0,
+        "num_false_positives": 3.0,
+        "pipeline_seconds": 20.861
+      },
+      "mirrorTest": {
+        "idf1": 0.9932414165990808,
+        "mota": 0.9864828331981617,
+        "num_switches": 2.0,
+        "num_misses": 24.0,
+        "num_false_positives": 24.0,
+        "pipeline_seconds": 17.523
+      },
+      "adiTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 7.622
+      },
+      "easyTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 10.829
+      },
+      "gymTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 15.538
+      },
+      "loveTest": {
+        "idf1": 0.849410073159386,
+        "mota": 0.7121951219512195,
+        "num_switches": 1.0,
+        "num_misses": 2246.0,
+        "num_false_positives": 1293.0,
+        "pipeline_seconds": 37.606
+      },
+      "shorterTest": {
+        "idf1": 0.8624141315014721,
+        "mota": 0.8383918013401656,
+        "num_switches": 1.0,
+        "num_misses": 194.0,
+        "num_false_positives": 215.0,
+        "pipeline_seconds": 13.163
+      },
+      "MotionTest": {
+        "idf1": 0.9338954976660142,
+        "mota": 0.8696710604441278,
+        "num_switches": 0.0,
+        "num_misses": 1337.0,
+        "num_false_positives": 858.0,
+        "pipeline_seconds": 54.371
+      },
+      "darkTest": {
+        "idf1": 0.6525612472160356,
+        "mota": 0.49651882413615267,
+        "num_switches": 23.0,
+        "num_misses": 2064.0,
+        "num_false_positives": 1818.0,
+        "pipeline_seconds": 24.572
+      }
+    }
+  },
+  {
+    "variant": "pose_body_heavy",
+    "env": {
+      "BEST_ID_POSE_MERGE": "1",
+      "BEST_ID_POSE_MERGE_HAND_W": "0.20",
+      "BEST_ID_POSE_MERGE_BODY_W": "0.60",
+      "BEST_ID_POSE_MERGE_FACE_W": "0.20"
+    },
+    "mean_idf1": 0.9207711084188731,
+    "mean_mota": 0.8770817362459247,
+    "num_switches_total": 27.0,
+    "num_misses_total": 5875.0,
+    "num_false_positives_total": 4314.0,
+    "per_clip": {
+      "BigTest": {
+        "idf1": 0.9981450948062655,
+        "mota": 0.9962947715109098,
+        "num_switches": 0.0,
+        "num_misses": 15.0,
+        "num_false_positives": 3.0,
+        "pipeline_seconds": 20.738
+      },
+      "mirrorTest": {
+        "idf1": 0.9932414165990808,
+        "mota": 0.9864828331981617,
+        "num_switches": 2.0,
+        "num_misses": 24.0,
+        "num_false_positives": 24.0,
+        "pipeline_seconds": 17.91
+      },
+      "adiTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 7.613
+      },
+      "easyTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 10.655
+      },
+      "gymTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 16.025
+      },
+      "loveTest": {
+        "idf1": 0.849410073159386,
+        "mota": 0.7121951219512195,
+        "num_switches": 1.0,
+        "num_misses": 2246.0,
+        "num_false_positives": 1293.0,
+        "pipeline_seconds": 37.243
+      },
+      "shorterTest": {
+        "idf1": 0.8624141315014721,
+        "mota": 0.8383918013401656,
+        "num_switches": 1.0,
+        "num_misses": 194.0,
+        "num_false_positives": 215.0,
+        "pipeline_seconds": 13.168
+      },
+      "MotionTest": {
+        "idf1": 0.9311680124876175,
+        "mota": 0.863852274076713,
+        "num_switches": 0.0,
+        "num_misses": 1332.0,
+        "num_false_positives": 961.0,
+        "pipeline_seconds": 54.271
+      },
+      "darkTest": {
+        "idf1": 0.6525612472160356,
+        "mota": 0.49651882413615267,
+        "num_switches": 23.0,
+        "num_misses": 2064.0,
+        "num_false_positives": 1818.0,
+        "pipeline_seconds": 24.458
+      }
+    }
+  },
+  {
+    "variant": "pose_min_vis_strict",
+    "env": {
+      "BEST_ID_POSE_MERGE": "1",
+      "BEST_ID_POSE_MERGE_MIN_VIS": "0.50"
+    },
+    "mean_idf1": 0.9210741623275839,
+    "mean_mota": 0.8777282680645264,
+    "num_switches_total": 27.0,
+    "num_misses_total": 5880.0,
+    "num_false_positives_total": 4211.0,
+    "per_clip": {
+      "BigTest": {
+        "idf1": 0.9981450948062655,
+        "mota": 0.9962947715109098,
+        "num_switches": 0.0,
+        "num_misses": 15.0,
+        "num_false_positives": 3.0,
+        "pipeline_seconds": 20.457
+      },
+      "mirrorTest": {
+        "idf1": 0.9932414165990808,
+        "mota": 0.9864828331981617,
+        "num_switches": 2.0,
+        "num_misses": 24.0,
+        "num_false_positives": 24.0,
+        "pipeline_seconds": 17.636
+      },
+      "adiTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 7.943
+      },
+      "easyTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 10.914
+      },
+      "gymTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 15.37
+      },
+      "loveTest": {
+        "idf1": 0.849410073159386,
+        "mota": 0.7121951219512195,
+        "num_switches": 1.0,
+        "num_misses": 2246.0,
+        "num_false_positives": 1293.0,
+        "pipeline_seconds": 37.552
+      },
+      "shorterTest": {
+        "idf1": 0.8624141315014721,
+        "mota": 0.8383918013401656,
+        "num_switches": 1.0,
+        "num_misses": 194.0,
+        "num_false_positives": 215.0,
+        "pipeline_seconds": 13.225
+      },
+      "MotionTest": {
+        "idf1": 0.9338954976660142,
+        "mota": 0.8696710604441278,
+        "num_switches": 0.0,
+        "num_misses": 1337.0,
+        "num_false_positives": 858.0,
+        "pipeline_seconds": 54.286
+      },
+      "darkTest": {
+        "idf1": 0.6525612472160356,
+        "mota": 0.49651882413615267,
+        "num_switches": 23.0,
+        "num_misses": 2064.0,
+        "num_false_positives": 1818.0,
+        "pipeline_seconds": 24.642
+      }
+    }
+  },
+  {
+    "variant": "pose_min_vis_loose",
+    "env": {
+      "BEST_ID_POSE_MERGE": "1",
+      "BEST_ID_POSE_MERGE_MIN_VIS": "0.20"
+    },
+    "mean_idf1": 0.9207711084188731,
+    "mean_mota": 0.8770817362459247,
+    "num_switches_total": 27.0,
+    "num_misses_total": 5875.0,
+    "num_false_positives_total": 4314.0,
+    "per_clip": {
+      "BigTest": {
+        "idf1": 0.9981450948062655,
+        "mota": 0.9962947715109098,
+        "num_switches": 0.0,
+        "num_misses": 15.0,
+        "num_false_positives": 3.0,
+        "pipeline_seconds": 20.515
+      },
+      "mirrorTest": {
+        "idf1": 0.9932414165990808,
+        "mota": 0.9864828331981617,
+        "num_switches": 2.0,
+        "num_misses": 24.0,
+        "num_false_positives": 24.0,
+        "pipeline_seconds": 17.334
+      },
+      "adiTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 7.422
+      },
+      "easyTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 10.721
+      },
+      "gymTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 15.458
+      },
+      "loveTest": {
+        "idf1": 0.849410073159386,
+        "mota": 0.7121951219512195,
+        "num_switches": 1.0,
+        "num_misses": 2246.0,
+        "num_false_positives": 1293.0,
+        "pipeline_seconds": 37.577
+      },
+      "shorterTest": {
+        "idf1": 0.8624141315014721,
+        "mota": 0.8383918013401656,
+        "num_switches": 1.0,
+        "num_misses": 194.0,
+        "num_false_positives": 215.0,
+        "pipeline_seconds": 13.2
+      },
+      "MotionTest": {
+        "idf1": 0.9311680124876175,
+        "mota": 0.863852274076713,
+        "num_switches": 0.0,
+        "num_misses": 1332.0,
+        "num_false_positives": 961.0,
+        "pipeline_seconds": 54.377
+      },
+      "darkTest": {
+        "idf1": 0.6525612472160356,
+        "mota": 0.49651882413615267,
+        "num_switches": 23.0,
+        "num_misses": 2064.0,
+        "num_false_positives": 1818.0,
+        "pipeline_seconds": 24.641
+      }
+    }
+  },
+  {
+    "variant": "pose_lightweight",
+    "env": {
+      "BEST_ID_POSE_MERGE": "1",
+      "BEST_ID_POSE_MERGE_MODE": "lightweight"
+    },
+    "mean_idf1": 0.9207711084188731,
+    "mean_mota": 0.8770817362459247,
+    "num_switches_total": 27.0,
+    "num_misses_total": 5875.0,
+    "num_false_positives_total": 4314.0,
+    "per_clip": {
+      "BigTest": {
+        "idf1": 0.9981450948062655,
+        "mota": 0.9962947715109098,
+        "num_switches": 0.0,
+        "num_misses": 15.0,
+        "num_false_positives": 3.0,
+        "pipeline_seconds": 20.497
+      },
+      "mirrorTest": {
+        "idf1": 0.9932414165990808,
+        "mota": 0.9864828331981617,
+        "num_switches": 2.0,
+        "num_misses": 24.0,
+        "num_false_positives": 24.0,
+        "pipeline_seconds": 17.265
+      },
+      "adiTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 7.429
+      },
+      "easyTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 10.733
+      },
+      "gymTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 15.317
+      },
+      "loveTest": {
+        "idf1": 0.849410073159386,
+        "mota": 0.7121951219512195,
+        "num_switches": 1.0,
+        "num_misses": 2246.0,
+        "num_false_positives": 1293.0,
+        "pipeline_seconds": 37.458
+      },
+      "shorterTest": {
+        "idf1": 0.8624141315014721,
+        "mota": 0.8383918013401656,
+        "num_switches": 1.0,
+        "num_misses": 194.0,
+        "num_false_positives": 215.0,
+        "pipeline_seconds": 13.344
+      },
+      "MotionTest": {
+        "idf1": 0.9311680124876175,
+        "mota": 0.863852274076713,
+        "num_switches": 0.0,
+        "num_misses": 1332.0,
+        "num_false_positives": 961.0,
+        "pipeline_seconds": 54.225
+      },
+      "darkTest": {
+        "idf1": 0.6525612472160356,
+        "mota": 0.49651882413615267,
+        "num_switches": 23.0,
+        "num_misses": 2064.0,
+        "num_false_positives": 1818.0,
+        "pipeline_seconds": 24.464
+      }
+    }
+  },
+  {
+    "variant": "pose_performance",
+    "env": {
+      "BEST_ID_POSE_MERGE": "1",
+      "BEST_ID_POSE_MERGE_MODE": "performance"
+    },
+    "mean_idf1": 0.9207711084188731,
+    "mean_mota": 0.8770817362459247,
+    "num_switches_total": 27.0,
+    "num_misses_total": 5875.0,
+    "num_false_positives_total": 4314.0,
+    "per_clip": {
+      "BigTest": {
+        "idf1": 0.9981450948062655,
+        "mota": 0.9962947715109098,
+        "num_switches": 0.0,
+        "num_misses": 15.0,
+        "num_false_positives": 3.0,
+        "pipeline_seconds": 20.689
+      },
+      "mirrorTest": {
+        "idf1": 0.9932414165990808,
+        "mota": 0.9864828331981617,
+        "num_switches": 2.0,
+        "num_misses": 24.0,
+        "num_false_positives": 24.0,
+        "pipeline_seconds": 17.363
+      },
+      "adiTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 7.534
+      },
+      "easyTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 10.63
+      },
+      "gymTest": {
+        "idf1": 1.0,
+        "mota": 1.0,
+        "num_switches": 0.0,
+        "num_misses": 0.0,
+        "num_false_positives": 0.0,
+        "pipeline_seconds": 15.422
+      },
+      "loveTest": {
+        "idf1": 0.849410073159386,
+        "mota": 0.7121951219512195,
+        "num_switches": 1.0,
+        "num_misses": 2246.0,
+        "num_false_positives": 1293.0,
+        "pipeline_seconds": 37.338
+      },
+      "shorterTest": {
+        "idf1": 0.8624141315014721,
+        "mota": 0.8383918013401656,
+        "num_switches": 1.0,
+        "num_misses": 194.0,
+        "num_false_positives": 215.0,
+        "pipeline_seconds": 13.135
+      },
+      "MotionTest": {
+        "idf1": 0.9311680124876175,
+        "mota": 0.863852274076713,
+        "num_switches": 0.0,
+        "num_misses": 1332.0,
+        "num_false_positives": 961.0,
+        "pipeline_seconds": 54.644
+      },
+      "darkTest": {
+        "idf1": 0.6525612472160356,
+        "mota": 0.49651882413615267,
+        "num_switches": 23.0,
+        "num_misses": 2064.0,
+        "num_false_positives": 1818.0,
+        "pipeline_seconds": 24.705
+      }
+    }
+  }
+]

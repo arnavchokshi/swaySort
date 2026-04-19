@@ -196,6 +196,82 @@ def iter_video_frames(video: Path):
         cap.release()
 
 
+def iter_video_frames_prefetched(video: Path, queue_size: int = 4):
+    """Same contract as ``iter_video_frames`` but decodes ahead in a
+    background thread.
+
+    Yields exactly the same (idx, frame_bgr) sequence as the synchronous
+    iterator (cv2 / image decode is deterministic), so this is a drop-in
+    replacement for any consumer. The benefit is that frame N+1's decode
+    overlaps with frame N's detect+track on the GPU, hiding 5--15 ms of
+    cv2 decode latency per frame.
+
+    Args:
+        video: same as ``iter_video_frames``.
+        queue_size: max frames buffered in the inter-thread queue. Each
+            1080p frame is ~6 MB so 4--8 is a sensible cap; 0 falls back
+            to the synchronous iterator.
+    """
+    if queue_size <= 0:
+        yield from iter_video_frames(video)
+        return
+
+    import queue
+    import threading
+
+    q: "queue.Queue" = queue.Queue(maxsize=int(queue_size))
+    stop = threading.Event()
+    SENTINEL = object()
+
+    def _producer():
+        try:
+            for item in iter_video_frames(video):
+                if stop.is_set():
+                    return
+                # Bounded put -- if the consumer is slow, block until
+                # there's room. Periodic timeout so we still notice stop.
+                while True:
+                    try:
+                        q.put(item, timeout=0.25)
+                        break
+                    except queue.Full:
+                        if stop.is_set():
+                            return
+        except Exception as exc:  # surface decode errors on consumer side
+            try:
+                q.put(("__error__", exc), timeout=1.0)
+            except queue.Full:
+                pass
+        finally:
+            try:
+                q.put(SENTINEL, timeout=1.0)
+            except queue.Full:
+                pass
+
+    t = threading.Thread(
+        target=_producer, name="iter_video_frames_prefetch", daemon=True,
+    )
+    t.start()
+    try:
+        while True:
+            item = q.get()
+            if item is SENTINEL:
+                break
+            if isinstance(item, tuple) and item and item[0] == "__error__":
+                raise item[1]
+            yield item
+    finally:
+        stop.set()
+        # Drain so producer's blocking put() unblocks; daemon thread will
+        # exit when the process exits anyway.
+        try:
+            while True:
+                q.get_nowait()
+        except queue.Empty:
+            pass
+        t.join(timeout=1.0)
+
+
 def run_deepocsort(
     video: Path,
     *,

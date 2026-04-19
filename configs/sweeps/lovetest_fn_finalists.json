@@ -1,0 +1,9 @@
+{
+  "_doc": "Validate the loveTest sweep winner (ens_768_896_1024) on all 9 clips. Hypothesis: adding imgsz=896 closes a medium-scale gap on close-contact pairs in loveTest (+0.007 IDF1, -192 FN) without regressing on other clips. Also tests stacking with the v9 dark-recovery profile (CLAHE + gamma=auto) to see if the two wins compose.",
+  "variants": [
+    {"name": "baseline",                       "env": {},                                                                                "notes": "v8 baseline"},
+    {"name": "ens_768_896_1024",               "env": {"BEST_ID_IMGSZ_ENSEMBLE": "768,896,1024"},                                        "notes": "loveTest sweep winner"},
+    {"name": "v9_dark",                        "env": {"BEST_ID_DARK_PROFILE": "v9"},                                                    "notes": "promoted dark-recovery v9 profile (CLAHE + gamma=auto)"},
+    {"name": "v9_dark_plus_896",               "env": {"BEST_ID_DARK_PROFILE": "v9", "BEST_ID_IMGSZ_ENSEMBLE": "768,896,1024"},          "notes": "STACKED: dark-recovery v9 + 768/896/1024 ensemble"}
+  ]
+}

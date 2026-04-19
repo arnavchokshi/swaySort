@@ -1,0 +1,20 @@
+{
+  "_doc": "Tier-3 post-process sweep: RTMW (RTMPose-Wholebody) pose-aware ID merge AND-gate. Implements work/research/rtmw_strategies.md top-priority strategy. For each candidate ID merge proposed by the existing IoU/proximity gate, extracts a 133-keypoint wholebody pose at the tail of A and head of B, computes weighted body+hands+face cosine similarity, and only allows the merge if similarity >= threshold. Hand keypoints are the discriminating signal: dancers wearing different shirt patterns/jewellery split body+face cosine but separate cleanly via hand fingerprints. Run on dance-heavy clips with the most identity collisions.",
+  "variants": [
+    {"name": "baseline",                       "env": {},                                                                                                                                "notes": "control"},
+
+    {"name": "pose_default",                   "env": {"BEST_ID_POSE_MERGE": "1"},                                                                                                        "notes": "default (thresh=0.50, body=0.40, hand=0.40, face=0.20)"},
+
+    {"name": "pose_thresh_low",                "env": {"BEST_ID_POSE_MERGE": "1", "BEST_ID_POSE_MERGE_THRESH": "0.40"},                                                                   "notes": "permissive cosine threshold"},
+    {"name": "pose_thresh_high",               "env": {"BEST_ID_POSE_MERGE": "1", "BEST_ID_POSE_MERGE_THRESH": "0.60"},                                                                   "notes": "strict cosine threshold"},
+
+    {"name": "pose_hand_heavy",                "env": {"BEST_ID_POSE_MERGE": "1", "BEST_ID_POSE_MERGE_HAND_W": "0.60", "BEST_ID_POSE_MERGE_BODY_W": "0.30", "BEST_ID_POSE_MERGE_FACE_W": "0.10"}, "notes": "hand-fingerprint dominant (research recommended)"},
+    {"name": "pose_body_heavy",                "env": {"BEST_ID_POSE_MERGE": "1", "BEST_ID_POSE_MERGE_HAND_W": "0.20", "BEST_ID_POSE_MERGE_BODY_W": "0.60", "BEST_ID_POSE_MERGE_FACE_W": "0.20"}, "notes": "body dominant (more stable across frames)"},
+
+    {"name": "pose_min_vis_strict",            "env": {"BEST_ID_POSE_MERGE": "1", "BEST_ID_POSE_MERGE_MIN_VIS": "0.50"},                                                                  "notes": "only use confidently-visible keypoints"},
+    {"name": "pose_min_vis_loose",             "env": {"BEST_ID_POSE_MERGE": "1", "BEST_ID_POSE_MERGE_MIN_VIS": "0.20"},                                                                  "notes": "include lower-conf keypoints"},
+
+    {"name": "pose_lightweight",               "env": {"BEST_ID_POSE_MERGE": "1", "BEST_ID_POSE_MERGE_MODE": "lightweight"},                                                              "notes": "smaller RTMW (faster)"},
+    {"name": "pose_performance",               "env": {"BEST_ID_POSE_MERGE": "1", "BEST_ID_POSE_MERGE_MODE": "performance"},                                                              "notes": "RTMW-DW-X-L 384x288 (slower, more accurate)"}
+  ]
+}

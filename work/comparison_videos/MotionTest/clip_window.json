@@ -1,0 +1,16 @@
+{
+  "clip": "MotionTest",
+  "out": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/comparison_videos/MotionTest/MotionTest_ours_vs_OcSort_base_no_ReID.mp4",
+  "frames_written": 360,
+  "wall_seconds": 4.59,
+  "fps": 29.99,
+  "start_frame": 0,
+  "end_frame": 359,
+  "out_resolution": [
+    1920,
+    640
+  ],
+  "worst_baseline": "OcSort (base, no ReID)",
+  "mean_gt_density": 14.0,
+  "clip_window_seconds": 12.0
+}

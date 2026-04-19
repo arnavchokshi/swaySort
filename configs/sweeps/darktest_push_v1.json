@@ -1,0 +1,32 @@
+{
+  "_doc": "Tier-2 darkTest-targeted sweep. Baseline darkTest IDF1=0.6526; v9_dark (CLAHE+auto gamma) lifts to 0.7027 (+0.0502). Goal: push past 0.7027 by combining v9_dark with (a) adaptive conf reduction on dark frames, (b) brightened ensemble view, (c) larger imgsz on dark, (d) explicit gamma instead of auto. All variants STACK on top of dark_v9 (CLAHE + auto gamma) so we're directly comparing against the new v9 baseline. Run on darkTest only for fast iteration; promising variants get re-run on the full 9-clip set for no-regression validation in the next iteration.",
+  "variants": [
+    {"name": "v8_baseline",                      "env": {},                                                                                                    "notes": "v8 control (no dark recovery, [768,1024])"},
+
+    {"name": "v9_dark",                          "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto"},                                              "notes": "current v9 default (re-validate)"},
+
+    {"name": "v9_adaptiveconf_05",               "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_ADAPTIVE_CONF": "-0.05"},            "notes": "v9 + lower conf 0.05 on dark frames"},
+    {"name": "v9_adaptiveconf_10",               "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_ADAPTIVE_CONF": "-0.10"},            "notes": "v9 + lower conf 0.10 on dark frames"},
+    {"name": "v9_adaptiveconf_15",               "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_ADAPTIVE_CONF": "-0.15"},            "notes": "v9 + lower conf 0.15 on dark frames"},
+
+    {"name": "v9_brighten_15",                   "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_DARK_BRIGHTEN": "1.5"},              "notes": "v9 + brightened 2nd view (1.5x)"},
+    {"name": "v9_brighten_20",                   "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_DARK_BRIGHTEN": "2.0"},              "notes": "v9 + brightened 2nd view (2.0x)"},
+
+    {"name": "v9_imgsz_1280",                    "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_IMGSZ_ENSEMBLE": "1024,1280"},       "notes": "v9 + higher-res ensemble"},
+    {"name": "v9_imgsz_1280_only",               "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_IMGSZ_ENSEMBLE": "1280"},            "notes": "v9 + single 1280 scale"},
+
+    {"name": "v9_gamma_18",                      "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "1.8"},                                               "notes": "v9 with explicit gamma=1.8 (vs auto)"},
+    {"name": "v9_gamma_22",                      "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "2.2"},                                               "notes": "v9 with explicit gamma=2.2"},
+
+    {"name": "v9_luma100",                       "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_DARK_LUMA": "100"},                  "notes": "v9 with broader luma trigger (treat more frames as dark)"},
+
+    {"name": "v9_combo_a",                       "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_ADAPTIVE_CONF": "-0.10", "BEST_ID_DARK_BRIGHTEN": "1.5"}, "notes": "v9 + conf-0.10 + brighten 1.5"},
+    {"name": "v9_combo_b",                       "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_ADAPTIVE_CONF": "-0.10", "BEST_ID_IMGSZ_ENSEMBLE": "1024,1280"}, "notes": "v9 + conf-0.10 + 1024/1280 ensemble"},
+    {"name": "v9_combo_c",                       "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_ADAPTIVE_CONF": "-0.10", "BEST_ID_DARK_BRIGHTEN": "1.5", "BEST_ID_IMGSZ_ENSEMBLE": "1024,1280"}, "notes": "v9 + conf-0.10 + brighten 1.5 + 1024/1280 ensemble (max recall)"},
+
+    {"name": "sam_stride1",                      "env": {"BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_STRIDE": "1"},                                          "notes": "SAM verify every box (proven darkTest +0.0185 in sam_verifier_v1)"},
+    {"name": "v9_plus_sam_stride1",              "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_STRIDE": "1"}, "notes": "stack v9 + SAM stride=1 (best darkTest candidate)"},
+    {"name": "v9_plus_sam_stride1_conf10",       "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_STRIDE": "1", "BEST_ID_ADAPTIVE_CONF": "-0.10"}, "notes": "v9 + SAM stride=1 + conf-0.10 (max recall + verify)"},
+    {"name": "v9_plus_sam_stride1_brighten",     "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_STRIDE": "1", "BEST_ID_DARK_BRIGHTEN": "1.5"}, "notes": "v9 + SAM stride=1 + brighten 1.5"}
+  ]
+}

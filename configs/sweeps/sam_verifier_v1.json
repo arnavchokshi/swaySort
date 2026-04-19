@@ -1,0 +1,20 @@
+{
+  "_doc": "Tier-2 detector sweep: SAM 2.1 per-bbox phantom-track verifier. Implements the top SAM 2.1 strategy from work/research/sam21_strategies.md. For each detected bbox, asks SAM 2.1 image-predictor 'is there a person here?'; if mask coverage of the bbox is below threshold, drops the box as a phantom. Image predictor only -- never video predictor -- so the past mask-propagation identity-fusion failure mode cannot occur. Stride/conf-max/area-max gates restrict SAM calls to suspicious boxes for speed. Run on the FP-heavy clips first (loveTest, MotionTest) plus darkTest where low-light produces the most phantoms.",
+  "variants": [
+    {"name": "baseline",                  "env": {},                                                                                                                                                              "notes": "control"},
+
+    {"name": "sam_default",               "env": {"BEST_ID_SAM_VERIFY": "1"},                                                                                                                                       "notes": "default knobs (stride=5, fill=0.30, conf_max=0.55)"},
+
+    {"name": "sam_strict_fill",           "env": {"BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_FILL": "0.40"},                                                                                                    "notes": "stricter fill (drops more boxes)"},
+    {"name": "sam_loose_fill",            "env": {"BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_FILL": "0.20"},                                                                                                    "notes": "looser fill (drops fewer boxes)"},
+
+    {"name": "sam_stride1",               "env": {"BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_STRIDE": "1"},                                                                                                     "notes": "verify EVERY frame (expensive)"},
+    {"name": "sam_stride10",              "env": {"BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_STRIDE": "10"},                                                                                                    "notes": "verify every 10th frame + suspicious"},
+
+    {"name": "sam_conf_lt45",             "env": {"BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_CONF_MAX": "0.45"},                                                                                                "notes": "tighter conf gate -- only verify low-conf boxes"},
+    {"name": "sam_conf_lt70",             "env": {"BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_CONF_MAX": "0.70"},                                                                                                "notes": "wider conf gate -- verify medium-conf too"},
+
+    {"name": "sam_strict_combo",          "env": {"BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_FILL": "0.35", "BEST_ID_SAM_VERIFY_STRIDE": "3", "BEST_ID_SAM_VERIFY_CONF_MAX": "0.50"},                            "notes": "strict combo for FP reduction"},
+    {"name": "sam_safe_combo",            "env": {"BEST_ID_SAM_VERIFY": "1", "BEST_ID_SAM_VERIFY_FILL": "0.25", "BEST_ID_SAM_VERIFY_STRIDE": "5", "BEST_ID_SAM_VERIFY_CONF_MAX": "0.55"},                            "notes": "safe combo (drops only highest-suspicion boxes)"}
+  ]
+}

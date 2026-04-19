@@ -1,0 +1,226 @@
+{
+  "label_prefix": "pp_v1_baseline",
+  "_doc": "Tier-1 postprocess sweep #1: sanity-check (must equal v8 baseline) + small perturbations of every knob to find immediate gradients on darkTest/loveTest without breaking the high-IDF1 clips.",
+  "clips": [
+    "BigTest", "MotionTest", "adiTest", "darkTest", "easyTest",
+    "gymTest", "loveTest", "mirrorTest", "shorterTest"
+  ],
+  "variants": [
+    {
+      "id": "baseline",
+      "notes": "Empty overrides -> must reproduce v8 baseline.",
+      "overrides": {}
+    },
+
+    {
+      "id": "post_min_p90_0.80",
+      "notes": "Loosen Stage-2 p90 gate from 0.84 to 0.80 -> may keep darkTest tracks alive.",
+      "overrides": {"POST_MIN_P90_CONF": 0.80}
+    },
+    {
+      "id": "post_min_p90_0.78",
+      "overrides": {"POST_MIN_P90_CONF": 0.78}
+    },
+    {
+      "id": "post_min_p90_0.76",
+      "overrides": {"POST_MIN_P90_CONF": 0.76}
+    },
+    {
+      "id": "post_min_p90_0.86",
+      "notes": "Tighten p90 -- expected to hurt low-light clips.",
+      "overrides": {"POST_MIN_P90_CONF": 0.86}
+    },
+
+    {
+      "id": "post_min_conf_0.45",
+      "notes": "Loosen Stage-2 mean-conf gate.",
+      "overrides": {"POST_MIN_CONF": 0.45}
+    },
+    {
+      "id": "post_min_conf_0.50",
+      "overrides": {"POST_MIN_CONF": 0.50}
+    },
+    {
+      "id": "post_min_conf_0.60",
+      "overrides": {"POST_MIN_CONF": 0.60}
+    },
+
+    {
+      "id": "post_min_len_30",
+      "notes": "Allow shorter post-merge survivors (helps reentries on dark/love).",
+      "overrides": {"POST_MIN_LEN": 30}
+    },
+    {
+      "id": "post_min_len_45",
+      "overrides": {"POST_MIN_LEN": 45}
+    },
+    {
+      "id": "post_min_len_75",
+      "notes": "Slightly tighter -> sanity check.",
+      "overrides": {"POST_MIN_LEN": 75}
+    },
+
+    {
+      "id": "id_merge_iou_0.05",
+      "notes": "Loosen id-merge spatial gate -> more bridging on darkTest.",
+      "overrides": {"ID_MERGE_IOU_THRESH": 0.05}
+    },
+    {
+      "id": "id_merge_iou_0.20",
+      "overrides": {"ID_MERGE_IOU_THRESH": 0.20}
+    },
+    {
+      "id": "id_merge_gap_64",
+      "overrides": {"ID_MERGE_MAX_GAP": 64}
+    },
+    {
+      "id": "id_merge_gap_96",
+      "overrides": {"ID_MERGE_MAX_GAP": 96}
+    },
+    {
+      "id": "id_merge_gap_128",
+      "overrides": {"ID_MERGE_MAX_GAP": 128}
+    },
+    {
+      "id": "id_merge_gap_192",
+      "notes": "Aggressive long-gap bridging.",
+      "overrides": {"ID_MERGE_MAX_GAP": 192}
+    },
+
+    {
+      "id": "osnet_cos_0.55",
+      "notes": "Loosen ReID gate (default 0.7) -> bridge more on dark.",
+      "overrides": {"cfg.pp_id_merge_osnet_cos_thresh": 0.55}
+    },
+    {
+      "id": "osnet_cos_0.60",
+      "overrides": {"cfg.pp_id_merge_osnet_cos_thresh": 0.60}
+    },
+    {
+      "id": "osnet_cos_0.65",
+      "overrides": {"cfg.pp_id_merge_osnet_cos_thresh": 0.65}
+    },
+    {
+      "id": "osnet_cos_0.75",
+      "notes": "Stricter -> may reduce IDS.",
+      "overrides": {"cfg.pp_id_merge_osnet_cos_thresh": 0.75}
+    },
+
+    {
+      "id": "pre_min_total_10",
+      "notes": "Even more permissive pre-merge length.",
+      "overrides": {"PRE_MIN_TOTAL_FRAMES": 10}
+    },
+    {
+      "id": "pre_min_total_30",
+      "overrides": {"PRE_MIN_TOTAL_FRAMES": 30}
+    },
+
+    {
+      "id": "pp_min_conf_0.30",
+      "notes": "Loosen the per-detection conf gate inside Stage-1.",
+      "overrides": {"cfg.pp_min_conf": 0.30}
+    },
+    {
+      "id": "pp_min_conf_0.45",
+      "overrides": {"cfg.pp_min_conf": 0.45}
+    },
+
+    {
+      "id": "max_gap_interp_24",
+      "notes": "Allow longer interpolation gaps (recovers brief darkTest dropouts).",
+      "overrides": {"cfg.pp_max_gap_interp": 24}
+    },
+    {
+      "id": "max_gap_interp_36",
+      "overrides": {"cfg.pp_max_gap_interp": 36}
+    },
+
+    {
+      "id": "stitch_gap_800",
+      "overrides": {"BBOX_STITCH_KWARGS.max_gap_frames": 800}
+    },
+    {
+      "id": "stitch_gap_1500",
+      "overrides": {"BBOX_STITCH_KWARGS.max_gap_frames": 1500}
+    },
+    {
+      "id": "stitch_jump_5000",
+      "overrides": {"BBOX_STITCH_KWARGS.max_position_jump_px": 5000.0}
+    },
+
+    {
+      "id": "ablate_stage_4",
+      "notes": "Disable size smoother to see if it hurts loveTest/darkTest scale jumps.",
+      "overrides": {"disable_stage_4": true}
+    },
+    {
+      "id": "ablate_stage_5",
+      "notes": "Disable center smoother.",
+      "overrides": {"disable_stage_5": true}
+    },
+    {
+      "id": "ablate_stage_3",
+      "notes": "Disable long-gap stitch.",
+      "overrides": {"disable_stage_3": true}
+    },
+    {
+      "id": "ablate_stage_2",
+      "notes": "Disable post-merge AND-gate -> expected to be noisier but useful FN check.",
+      "overrides": {"disable_stage_2": true}
+    },
+
+    {
+      "id": "size_smoother_window_11",
+      "overrides": {"SIZE_SMOOTHER_KWARGS.fallback_window": 11}
+    },
+    {
+      "id": "size_smoother_window_31",
+      "overrides": {"SIZE_SMOOTHER_KWARGS.fallback_window": 31}
+    },
+    {
+      "id": "center_smoother_window_11",
+      "overrides": {"CENTER_SMOOTHER_KWARGS.window": 11}
+    },
+    {
+      "id": "center_smoother_window_31",
+      "overrides": {"CENTER_SMOOTHER_KWARGS.window": 31}
+    },
+
+    {
+      "id": "DARK_combo_v1",
+      "notes": "Dark-friendly combo: looser p90 + looser ReID + larger id-merge gap.",
+      "overrides": {
+        "POST_MIN_P90_CONF": 0.78,
+        "POST_MIN_CONF": 0.50,
+        "ID_MERGE_MAX_GAP": 96,
+        "ID_MERGE_IOU_THRESH": 0.08,
+        "cfg.pp_id_merge_osnet_cos_thresh": 0.60
+      }
+    },
+    {
+      "id": "DARK_combo_v2",
+      "notes": "Even more permissive -- targeted at darkTest survival.",
+      "overrides": {
+        "POST_MIN_P90_CONF": 0.76,
+        "POST_MIN_CONF": 0.45,
+        "POST_MIN_LEN": 45,
+        "ID_MERGE_MAX_GAP": 128,
+        "ID_MERGE_IOU_THRESH": 0.05,
+        "cfg.pp_id_merge_osnet_cos_thresh": 0.55,
+        "PRE_MIN_TOTAL_FRAMES": 15
+      }
+    },
+    {
+      "id": "DARK_combo_v3_strict_reid",
+      "notes": "Permissive lengths but KEEP strict ReID (0.75) to stop swaps.",
+      "overrides": {
+        "POST_MIN_P90_CONF": 0.78,
+        "POST_MIN_CONF": 0.50,
+        "POST_MIN_LEN": 45,
+        "ID_MERGE_MAX_GAP": 96,
+        "cfg.pp_id_merge_osnet_cos_thresh": 0.75
+      }
+    }
+  ]
+}

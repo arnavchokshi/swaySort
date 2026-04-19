@@ -1,0 +1,27 @@
+{
+  "_doc": "Tier-2 detector sweep: cardinality-voting FN recovery via Kalman/linear extrapolation. Implements work/research/novel_strategies.md §2.1 — the only no-new-model FN recovery path. Each variant inserts synthetic detections at frames where per-frame dancer count drops below the running median, then runs the standard build_tracks. Run on loveTest (FN-dominant clip) to validate, then on the full 9-clip set for no-regression.",
+  "variants": [
+    {"name": "baseline",                    "env": {},                                                                                "notes": "control"},
+
+    {"name": "fnr_default",                 "env": {"BEST_ID_FN_RECOVERY": "1"},                                                       "notes": "default knobs (drop>=1, lookback=5, iou<=0.30)"},
+
+    {"name": "fnr_drop2",                   "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_DROP": "2"},                      "notes": "stricter cardinality drop"},
+    {"name": "fnr_drop1_lb3",               "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_LOOKBACK": "3"},                  "notes": "shorter recency window"},
+    {"name": "fnr_drop1_lb10",              "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_LOOKBACK": "10"},                 "notes": "longer recency window"},
+
+    {"name": "fnr_iou_tight",               "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_IOU": "0.20"},                    "notes": "stricter overlap rejection"},
+    {"name": "fnr_iou_loose",               "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_IOU": "0.40"},                    "notes": "looser overlap rejection"},
+
+    {"name": "fnr_minhist3",                "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_MIN_HIST": "3"},                  "notes": "permit short-history tracks"},
+    {"name": "fnr_minhist15",               "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_MIN_HIST": "15"},                 "notes": "require long-history tracks"},
+
+    {"name": "fnr_disp100",                 "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_MAX_DISP": "100"},                "notes": "tighter motion gate"},
+    {"name": "fnr_disp300",                 "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_MAX_DISP": "300"},                "notes": "looser motion gate"},
+
+    {"name": "fnr_conf_low",                "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_CONF": "0.40"},                   "notes": "synthetic conf 0.40"},
+    {"name": "fnr_conf_high",               "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_CONF": "0.55"},                   "notes": "synthetic conf 0.55 (passes p90 gate easier)"},
+
+    {"name": "fnr_combo_a",                 "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_LOOKBACK": "8", "BEST_ID_FN_RECOVERY_MIN_HIST": "5", "BEST_ID_FN_RECOVERY_IOU": "0.25"}, "notes": "balanced combo"},
+    {"name": "fnr_combo_b",                 "env": {"BEST_ID_FN_RECOVERY": "1", "BEST_ID_FN_RECOVERY_LOOKBACK": "12", "BEST_ID_FN_RECOVERY_MIN_HIST": "10", "BEST_ID_FN_RECOVERY_DROP": "2", "BEST_ID_FN_RECOVERY_CONF": "0.50"}, "notes": "conservative combo"}
+  ]
+}

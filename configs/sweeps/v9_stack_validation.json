@@ -1,0 +1,10 @@
+{
+  "_doc": "Re-run dark+ens validation with EXPLICIT env vars (BEST_ID_DARK_CLAHE/GAMMA), not the BEST_ID_DARK_PROFILE shortcut. The previous lovetest_fn_finalists sweep happened to be running with a stale pyc cache that didn't include _v9_profile_enabled(), so the profile shortcut was a silent no-op. Explicit env vars exercise the same code paths that the dark_recovery_finalists winner used (validated +0.0501 IDF1 on darkTest).",
+  "variants": [
+    {"name": "baseline",                       "env": {},                                                                                "notes": "v8 baseline (no preproc, [768,1024])"},
+    {"name": "dark_v9",                        "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto"},                          "notes": "explicit CLAHE + auto gamma (= v9 profile)"},
+    {"name": "ens_896",                        "env": {"BEST_ID_IMGSZ_ENSEMBLE": "768,896,1024"},                                         "notes": "imgsz=[768,896,1024] (winner from lovetest_fn_v1)"},
+    {"name": "dark_v9_plus_ens_896",           "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_IMGSZ_ENSEMBLE": "768,896,1024"}, "notes": "STACKED: dark v9 + 768/896/1024"},
+    {"name": "dark_v9_plus_ens_896_softnms",   "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto", "BEST_ID_IMGSZ_ENSEMBLE": "768,896,1024", "BEST_ID_SOFT_NMS": "0.5"}, "notes": "STACKED + Soft-NMS sigma=0.5 to preserve high-overlap dancers"}
+  ]
+}

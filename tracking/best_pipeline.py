@@ -247,6 +247,67 @@ def smooth_centers_median(
     return out
 
 
+def _make_frame_loader_for_cache(cache_path: Path):
+    """Resolve a frame_loader(int) -> ndarray for the video associated
+    with ``cache_path``.
+
+    Resolution order:
+      1. Sidecar JSON ``<cache>.video.json`` (written by
+         :func:`tracking.run_pipeline.run_pipeline_on_video`) with key
+         ``"video"`` holding the absolute video path. This is the
+         authoritative source -- every cache produced by the pipeline
+         since v9 has one.
+      2. Sibling guesses: any ``.mov`` / ``.mp4`` / ``.avi`` / ``.mkv``
+         next to the cache (for legacy work/results layouts).
+      3. No-op loader (returns ``None`` for every frame); the RTMW
+         pose-merge gate then silently skips the lookup.
+    """
+    cache_path = Path(cache_path).resolve()
+    cache_dir = cache_path.parent
+    sidecar = cache_path.with_suffix(cache_path.suffix + ".video.json")
+    video_path: Optional[Path] = None
+    if sidecar.is_file():
+        try:
+            meta = json.loads(sidecar.read_text())
+            cand = Path(str(meta.get("video", ""))).expanduser()
+            if cand.is_file():
+                video_path = cand
+        except (OSError, ValueError) as exc:
+            log.debug("video sidecar %s unreadable: %s", sidecar, exc)
+    if video_path is None:
+        candidates = []
+        for ext in (".mov", ".mp4", ".avi", ".mkv"):
+            for stem in ("video", cache_dir.name):
+                candidates.append(cache_dir / f"{stem}{ext}")
+        candidates.extend(sorted(cache_dir.glob("*.mov")))
+        candidates.extend(sorted(cache_dir.glob("*.mp4")))
+        video_path = next((p for p in candidates if p.is_file()), None)
+    if video_path is None:
+        log.warning(
+            "frame_loader: could not locate source video for %s "
+            "(sidecar absent and no sibling match); RTMW pose-merge will "
+            "silently skip cosine gating",
+            cache_path,
+        )
+        return lambda _idx: None
+
+    import cv2
+    _state = {"cap": None, "video": video_path}
+
+    def _loader(idx: int):
+        cap = _state["cap"]
+        if cap is None:
+            cap = cv2.VideoCapture(str(_state["video"]))
+            _state["cap"] = cap
+            if not cap.isOpened():
+                return None
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(idx))
+        ok, frame = cap.read()
+        return frame if ok else None
+
+    return _loader
+
+
 def build_tracks(
     cache_path: Path,
     cfg_path: Path,
@@ -271,6 +332,24 @@ def build_tracks(
     fd = joblib.load(str(cache_path))
     raw = frame_detections_to_raw_tracks(fd)
 
+    # Optional RTMW pose-aware ID merge gate (env-gated; no-op when
+    # disabled). When enabled, the AND-gate adds wholebody pose
+    # similarity (body+hands+face) on top of the existing IoU/proximity
+    # gate, vetoing merges between visually-similar but biomechanically
+    # distinct dancers. video_loader is required so postprocess can
+    # decode the bbox crop frames.
+    pose_extractor = None
+    pose_cos_thresh = 0.0
+    frame_loader = None
+    try:
+        from tracking import rtmw_pose_merge
+        if rtmw_pose_merge.is_enabled():
+            pose_extractor = rtmw_pose_merge.make_extractor()
+            pose_cos_thresh = rtmw_pose_merge.get_pose_cos_thresh()
+            frame_loader = _make_frame_loader_for_cache(cache_path)
+    except ImportError:
+        pass
+
     # Stage 1: prune + interpolate + ID merge (ReID-gated).
     stage1 = postprocess_tracks(
         raw,
@@ -288,11 +367,12 @@ def build_tracks(
         overlap_merge_min_frames=cfg["pp_overlap_merge_min_frames"],
         edge_trim_conf_thresh=cfg["pp_edge_trim_conf_thresh"],
         edge_trim_max_frames=cfg["pp_edge_trim_max_frames"],
-        pose_extractor=None, pose_cos_thresh=0.0,
+        pose_extractor=pose_extractor,
+        pose_cos_thresh=pose_cos_thresh,
         pose_max_gap=cfg["pp_pose_max_gap"],
         pose_min_iou_for_pair=cfg["pp_pose_min_iou_for_pair"],
         pose_max_center_dist=cfg["pp_pose_max_center_dist"],
-        frame_loader=None,
+        frame_loader=frame_loader,
     )
 
     # Stage 2: post-merge AND-gate (length / mean / p90).

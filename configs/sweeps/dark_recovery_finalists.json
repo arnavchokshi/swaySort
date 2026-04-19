@@ -1,0 +1,9 @@
+{
+  "_doc": "Top 3 dark-recovery variants from dark_recovery_v1 + baseline, validated on all 9 clips. Strict no-regression check on bright clips (BigTest, easyTest, gymTest, mirrorTest, adiTest) since the dark-recovery features are luma-gated and should be no-ops there.",
+  "variants": [
+    {"name": "baseline",                "env": {},                                                                                "notes": "v8 baseline"},
+    {"name": "clahe_gamma_auto",        "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto"},                          "notes": "BEST: +0.0501 on darkTest"},
+    {"name": "clahe_gamma_1p6",         "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "1.6"},                           "notes": "fixed gamma variant"},
+    {"name": "gamma_1p4",               "env": {"BEST_ID_DARK_GAMMA": "1.4"},                                                       "notes": "no-CLAHE option"}
+  ]
+}

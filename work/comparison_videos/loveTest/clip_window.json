@@ -1,0 +1,16 @@
+{
+  "clip": "loveTest",
+  "out": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/comparison_videos/loveTest/loveTest_ours_vs_DeepOcSort_base.mp4",
+  "frames_written": 359,
+  "wall_seconds": 4.56,
+  "fps": 29.914,
+  "start_frame": 0,
+  "end_frame": 358,
+  "out_resolution": [
+    1920,
+    640
+  ],
+  "worst_baseline": "DeepOcSort (base)",
+  "mean_gt_density": 15.0,
+  "clip_window_seconds": 12.0
+}

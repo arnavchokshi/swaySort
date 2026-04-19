@@ -93,6 +93,19 @@ def main(argv: list[str] | None = None) -> int:
     print(f"loaded {len(clips)} clips from {manifest}", flush=True)
     OUT_ROOT.mkdir(parents=True, exist_ok=True)
 
+    # Default to the v9 dark-recovery profile (CLAHE + gamma=auto), which
+    # won the dark_recovery_finalists sweep with +0.0055 mean IDF1 and
+    # +0.0501 IDF1 on darkTest, and is byte-identical on every well-lit
+    # clip thanks to luma-gating in tracking.dark_recovery. Users can
+    # opt out via `BEST_ID_DARK_PROFILE=` (empty) or override individual
+    # knobs via BEST_ID_DARK_GAMMA / BEST_ID_DARK_CLAHE.
+    os.environ.setdefault("BEST_ID_DARK_PROFILE", "v9")
+    print(
+        f"BEST_ID_DARK_PROFILE={os.environ['BEST_ID_DARK_PROFILE']!r} "
+        f"(dark-recovery preprocessing for low-light frames)",
+        flush=True,
+    )
+
     from tracking.run_pipeline import run_pipeline_on_video
 
     results: list[dict] = []

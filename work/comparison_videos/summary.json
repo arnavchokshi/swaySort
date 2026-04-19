@@ -1,0 +1,66 @@
+[
+  {
+    "clip": "BigTest",
+    "out": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/comparison_videos/BigTest/BigTest_ours_vs_DeepOcSort_base.mp4",
+    "frames_written": 360,
+    "wall_seconds": 4.11,
+    "fps": 30.0,
+    "start_frame": 120,
+    "end_frame": 479,
+    "out_resolution": [
+      1920,
+      640
+    ],
+    "worst_baseline": "DeepOcSort (base)",
+    "mean_gt_density": 10.83,
+    "clip_window_seconds": 12.0
+  },
+  {
+    "clip": "MotionTest",
+    "out": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/comparison_videos/MotionTest/MotionTest_ours_vs_OcSort_base_no_ReID.mp4",
+    "frames_written": 360,
+    "wall_seconds": 4.59,
+    "fps": 29.99,
+    "start_frame": 0,
+    "end_frame": 359,
+    "out_resolution": [
+      1920,
+      640
+    ],
+    "worst_baseline": "OcSort (base, no ReID)",
+    "mean_gt_density": 14.0,
+    "clip_window_seconds": 12.0
+  },
+  {
+    "clip": "loveTest",
+    "out": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/comparison_videos/loveTest/loveTest_ours_vs_DeepOcSort_base.mp4",
+    "frames_written": 359,
+    "wall_seconds": 4.56,
+    "fps": 29.914,
+    "start_frame": 0,
+    "end_frame": 358,
+    "out_resolution": [
+      1920,
+      640
+    ],
+    "worst_baseline": "DeepOcSort (base)",
+    "mean_gt_density": 15.0,
+    "clip_window_seconds": 12.0
+  },
+  {
+    "clip": "darkTest",
+    "out": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/comparison_videos/darkTest/darkTest_ours_vs_StrongSort_base.mp4",
+    "frames_written": 285,
+    "wall_seconds": 3.7,
+    "fps": 23.783,
+    "start_frame": 0,
+    "end_frame": 284,
+    "out_resolution": [
+      1920,
+      640
+    ],
+    "worst_baseline": "StrongSort (base)",
+    "mean_gt_density": 14.0,
+    "clip_window_seconds": 11.98
+  }
+]

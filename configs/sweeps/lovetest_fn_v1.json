@@ -1,0 +1,29 @@
+{
+  "_doc": "Tier-2b detector sweep: target loveTest FN recovery via detector ensemble variations. Each variant changes the YOLO multi-scale ensemble (imgsz list) and/or TTA flip, with optional adaptive conf. Hypothesis (from work/research/novel_strategies.md §2.2): adding imgsz=896 fills a medium-scale gap that the (768, 1024) ensemble misses on close-contact pairs in loveTest. Run on loveTest first to validate the +FN-recovery, then on the full 9-clip set to verify no-regression.",
+  "variants": [
+    {"name": "baseline_768_1024",       "env": {},                                                              "notes": "v8 baseline"},
+
+    {"name": "single_768",              "env": {"BEST_ID_IMGSZ_ENSEMBLE": "768"},                                "notes": "single-scale 768 ablation"},
+    {"name": "single_1024",             "env": {"BEST_ID_IMGSZ_ENSEMBLE": "1024"},                               "notes": "single-scale 1024 ablation"},
+    {"name": "single_896",              "env": {"BEST_ID_IMGSZ_ENSEMBLE": "896"},                                "notes": "single-scale 896 ablation"},
+    {"name": "single_1280",             "env": {"BEST_ID_IMGSZ_ENSEMBLE": "1280"},                               "notes": "single-scale 1280 (rejected previously due to splitting)"},
+
+    {"name": "ens_768_896",             "env": {"BEST_ID_IMGSZ_ENSEMBLE": "768,896"},                            "notes": "smaller pair"},
+    {"name": "ens_896_1024",            "env": {"BEST_ID_IMGSZ_ENSEMBLE": "896,1024"},                           "notes": "shifted pair"},
+    {"name": "ens_768_896_1024",        "env": {"BEST_ID_IMGSZ_ENSEMBLE": "768,896,1024"},                       "notes": "add 896 to existing pair (recommended)"},
+    {"name": "ens_768_1024_1152",       "env": {"BEST_ID_IMGSZ_ENSEMBLE": "768,1024,1152"},                      "notes": "extend upward"},
+
+    {"name": "ens_768_1024_iou_p5",     "env": {"BEST_ID_ENSEMBLE_IOU": "0.5"},                                  "notes": "looser cross-scale NMS"},
+    {"name": "ens_768_1024_iou_p7",     "env": {"BEST_ID_ENSEMBLE_IOU": "0.7"},                                  "notes": "tighter cross-scale NMS"},
+
+    {"name": "tta_only",                "env": {"BEST_ID_TTA_FLIP": "1"},                                        "notes": "+ horizontal flip TTA"},
+    {"name": "ens_896_tta",             "env": {"BEST_ID_IMGSZ_ENSEMBLE": "768,896,1024", "BEST_ID_TTA_FLIP": "1"}, "notes": "best ensemble + TTA"},
+
+    {"name": "softnms_p5",              "env": {"BEST_ID_SOFT_NMS": "0.5"},                                      "notes": "soft-NMS only (preserves close-contact pairs)"},
+    {"name": "softnms_p3",              "env": {"BEST_ID_SOFT_NMS": "0.3"},                                      "notes": "soft-NMS less aggressive"},
+
+    {"name": "ens_896_soft",            "env": {"BEST_ID_IMGSZ_ENSEMBLE": "768,896,1024", "BEST_ID_SOFT_NMS": "0.5"}, "notes": "best ensemble + soft-NMS"},
+
+    {"name": "combo_loveTest",          "env": {"BEST_ID_IMGSZ_ENSEMBLE": "768,896,1024", "BEST_ID_SOFT_NMS": "0.5", "BEST_ID_TTA_FLIP": "1"}, "notes": "kitchen sink for FN recovery"}
+  ]
+}

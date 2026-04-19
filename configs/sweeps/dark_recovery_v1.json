@@ -1,0 +1,30 @@
+{
+  "_doc": "Tier-2 detector sweep: dark-recovery preprocessing variants. Each variant toggles BEST_ID_DARK_* env vars consumed by tracking/dark_recovery.py. Run on darkTest + loveTest first (cheapest signal), then on the full 9-clip set for finalists. Variants are designed to be additive so we can ablate components.",
+  "variants": [
+    {"name": "baseline",                "env": {},                                                                                       "notes": "no env vars set; must match v8 baseline"},
+
+    {"name": "gamma_auto",              "env": {"BEST_ID_DARK_GAMMA": "auto"},                                                            "notes": "luma-adaptive gamma on dark frames only"},
+    {"name": "gamma_1p4",               "env": {"BEST_ID_DARK_GAMMA": "1.4"},                                                             "notes": "fixed mild gamma"},
+    {"name": "gamma_1p8",               "env": {"BEST_ID_DARK_GAMMA": "1.8"},                                                             "notes": "fixed moderate gamma"},
+
+    {"name": "clahe_only",              "env": {"BEST_ID_DARK_CLAHE": "1"},                                                               "notes": "CLAHE on LAB-L for dark frames"},
+
+    {"name": "clahe_gamma_auto",        "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "auto"},                                  "notes": "stack CLAHE then gamma"},
+    {"name": "clahe_gamma_1p6",         "env": {"BEST_ID_DARK_CLAHE": "1", "BEST_ID_DARK_GAMMA": "1.6"},                                   "notes": "stack CLAHE then fixed gamma"},
+
+    {"name": "adaptive_conf_03",        "env": {"BEST_ID_ADAPTIVE_CONF": "0.03"},                                                          "notes": "lower detector conf -0.03 on dark frames"},
+    {"name": "adaptive_conf_06",        "env": {"BEST_ID_ADAPTIVE_CONF": "0.06"},                                                          "notes": "lower detector conf -0.06 on dark frames"},
+
+    {"name": "soft_nms_p3",             "env": {"BEST_ID_SOFT_NMS": "0.3"},                                                                "notes": "linear soft-NMS sigma=0.3"},
+    {"name": "soft_nms_p5",             "env": {"BEST_ID_SOFT_NMS": "0.5"},                                                                "notes": "linear soft-NMS sigma=0.5"},
+
+    {"name": "brighten_1p6",            "env": {"BEST_ID_DARK_BRIGHTEN": "1.6"},                                                           "notes": "multi-exposure ensemble (also runs brightened view)"},
+    {"name": "brighten_2p0",            "env": {"BEST_ID_DARK_BRIGHTEN": "2.0"},                                                           "notes": "multi-exposure ensemble x2"},
+
+    {"name": "combo_a",                 "env": {"BEST_ID_DARK_GAMMA": "auto", "BEST_ID_ADAPTIVE_CONF": "0.04"},                            "notes": "auto-gamma + adaptive conf"},
+    {"name": "combo_b",                 "env": {"BEST_ID_DARK_GAMMA": "auto", "BEST_ID_DARK_CLAHE": "1", "BEST_ID_ADAPTIVE_CONF": "0.04"}, "notes": "auto-gamma + CLAHE + adaptive conf"},
+    {"name": "combo_c",                 "env": {"BEST_ID_DARK_GAMMA": "auto", "BEST_ID_DARK_CLAHE": "1", "BEST_ID_ADAPTIVE_CONF": "0.04", "BEST_ID_DARK_BRIGHTEN": "1.6"}, "notes": "auto-gamma + CLAHE + adaptive conf + multi-exposure"},
+    {"name": "combo_d",                 "env": {"BEST_ID_DARK_GAMMA": "auto", "BEST_ID_DARK_CLAHE": "1", "BEST_ID_ADAPTIVE_CONF": "0.04", "BEST_ID_SOFT_NMS": "0.5"},      "notes": "auto-gamma + CLAHE + adaptive conf + soft-NMS"},
+    {"name": "combo_e",                 "env": {"BEST_ID_DARK_GAMMA": "auto", "BEST_ID_DARK_CLAHE": "1", "BEST_ID_ADAPTIVE_CONF": "0.04", "BEST_ID_DARK_BRIGHTEN": "1.6", "BEST_ID_SOFT_NMS": "0.5"}, "notes": "everything on"}
+  ]
+}

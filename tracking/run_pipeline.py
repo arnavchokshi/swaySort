@@ -50,11 +50,13 @@ not have to re-run YOLO + DeepOcSort.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Iterator, List, Optional, Tuple
 
 import joblib
 import numpy as np
@@ -69,6 +71,7 @@ from tracking.best_pipeline import DET_CONF, build_tracks
 from tracking.deepocsort_runner import (
     install_kalman_jitter_patch,
     iter_video_frames,
+    iter_video_frames_prefetched,
     make_tracker,
 )
 from tracking.multi_scale_detector import make_multi_scale_detector
@@ -76,6 +79,34 @@ from tracking.postprocess import Track
 
 
 log = logging.getLogger("tracking.run_pipeline")
+
+
+def _resolve_prefetch_depth() -> int:
+    """Read BEST_ID_PREFETCH and return the queue depth (0 = sync)."""
+    raw = os.environ.get("BEST_ID_PREFETCH", "").strip()
+    if not raw:
+        return 0
+    try:
+        n = int(raw)
+    except ValueError:
+        log.warning("BEST_ID_PREFETCH=%r is not an int; falling back to 0", raw)
+        return 0
+    return max(0, n)
+
+
+def _resolve_pipeline_parallel() -> bool:
+    """Read BEST_ID_PIPELINE_PARALLEL flag (truthy values: 1/true/yes/on)."""
+    raw = os.environ.get("BEST_ID_PIPELINE_PARALLEL", "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _frame_iter(video: Path) -> Iterator[Tuple[int, np.ndarray]]:
+    """Choose sync vs prefetched frame decoder based on env var."""
+    depth = _resolve_prefetch_depth()
+    if depth <= 0:
+        return iter_video_frames(video)
+    log.info("frame prefetch enabled: queue_depth=%d", depth)
+    return iter_video_frames_prefetched(video, queue_size=depth)
 
 
 # Production constants. Every value here was selected by sweeping
@@ -86,11 +117,172 @@ DEFAULT_WEIGHTS = REPO_ROOT / "weights" / "best.pt"
 DEFAULT_CFG = REPO_ROOT / "configs" / "best_pipeline.json"
 DEFAULT_REID_WEIGHTS = "osnet_x0_25_msmt17.pt"
 
+def _resolve_imgsz_ensemble() -> Tuple[int, ...]:
+    """Read BEST_ID_IMGSZ_ENSEMBLE if set (comma-separated ints), else
+    return the v8 default (768, 1024). Set unset == v8 byte-identical.
+    """
+    raw = os.environ.get("BEST_ID_IMGSZ_ENSEMBLE", "").strip()
+    if not raw:
+        return (768, 1024)
+    out = []
+    for tok in raw.split(","):
+        tok = tok.strip()
+        if not tok:
+            continue
+        try:
+            out.append(int(tok))
+        except ValueError:
+            log.warning("BEST_ID_IMGSZ_ENSEMBLE token %r not int; ignoring",
+                        tok)
+    if not out:
+        return (768, 1024)
+    return tuple(sorted(set(out)))
+
+
+def _resolve_ensemble_iou() -> float:
+    raw = os.environ.get("BEST_ID_ENSEMBLE_IOU", "").strip()
+    if not raw:
+        return 0.6
+    try:
+        return float(raw)
+    except ValueError:
+        log.warning("BEST_ID_ENSEMBLE_IOU=%r not float; using 0.6", raw)
+        return 0.6
+
+
+def _resolve_tta_flip() -> bool:
+    raw = os.environ.get("BEST_ID_TTA_FLIP", "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
 DETECTOR_IMGSZ_ENSEMBLE = (768, 1024)
 DETECTOR_ENSEMBLE_IOU = 0.6
 DETECTOR_CONF = float(DET_CONF)  # 0.34, the plateau centre
 DETECTOR_IOU = 0.70
 PERSON_CLASS_ID = 0
+
+
+def _record_tracker_output(
+    out_frames: List[FrameDetections],
+    tracks_per_frame: Optional[np.ndarray],
+) -> None:
+    """Append a single tracker frame to ``out_frames`` -- shared between
+    the serial and pipelined drivers so they emit byte-identical caches.
+    """
+    if tracks_per_frame is None or len(tracks_per_frame) == 0:
+        out_frames.append(FrameDetections(
+            np.empty((0, 4), dtype=np.float32),
+            np.empty((0,), dtype=np.float32),
+            np.empty((0,), dtype=np.float32),
+        ))
+        return
+    arr = np.asarray(tracks_per_frame, dtype=np.float32)
+    xyxys = arr[:, 0:4].astype(np.float32)
+    tids = arr[:, 4].astype(np.float32)
+    if arr.shape[1] > 5:
+        confs = arr[:, 5].astype(np.float32)
+    else:
+        confs = np.ones(len(arr), dtype=np.float32)
+    out_frames.append(FrameDetections(xyxys, confs, tids))
+
+
+def _safe_detect(detect, frame_bgr: np.ndarray) -> np.ndarray:
+    dets = detect(frame_bgr)
+    if dets.size == 0:
+        dets = np.zeros((0, 6), dtype=np.float32)
+    return dets
+
+
+def _safe_tracker_update(tracker, dets, frame_bgr, idx) -> np.ndarray:
+    try:
+        tracks_per_frame = tracker.update(dets, frame_bgr)
+    except Exception as exc:
+        log.exception("DeepOcSort.update failed at frame %d: %s", idx, exc)
+        tracks_per_frame = np.zeros((0, 7), dtype=np.float32)
+    return tracks_per_frame
+
+
+def _detect_and_track_serial(
+    *, video: Path, detect, tracker, max_frames: Optional[int],
+) -> List[FrameDetections]:
+    out_frames: List[FrameDetections] = []
+    n_processed = 0
+    t0 = time.time()
+    for idx, frame_bgr in _frame_iter(Path(video)):
+        if max_frames is not None and idx >= max_frames:
+            break
+        dets = _safe_detect(detect, frame_bgr)
+        tracks_per_frame = _safe_tracker_update(tracker, dets, frame_bgr, idx)
+        _record_tracker_output(out_frames, tracks_per_frame)
+        n_processed += 1
+    dt = time.time() - t0
+    log.info(
+        "%d frames in %.1fs (%.2f FPS)", n_processed, dt,
+        n_processed / max(dt, 1e-6),
+    )
+    return out_frames
+
+
+def _detect_and_track_pipelined(
+    *, video: Path, detect, tracker, max_frames: Optional[int],
+) -> List[FrameDetections]:
+    """One-frame look-ahead: while tracker runs on frame N, detector is
+    already running on frame N+1 in a worker thread.
+
+    Order of tracker.update() calls is preserved exactly, so DeepOcSort's
+    Kalman + ReID-gallery state evolves identically to the serial path.
+    The only thing that changes is *when* detector forwards happen.
+
+    On CUDA the detector and tracker run on separate streams so there's
+    real GPU concurrency on top of the CPU/GPU overlap. On MPS the GPU
+    serialises but we still hide the tracker's CPU work (Kalman,
+    association, ReID gallery maintenance) behind the next detector
+    forward.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    out_frames: List[FrameDetections] = []
+    n_processed = 0
+    log.info("detect/track pipeline parallelism enabled (1-frame lookahead)")
+    t0 = time.time()
+
+    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="det") as pool:
+        prev_idx: Optional[int] = None
+        prev_frame: Optional[np.ndarray] = None
+        det_future = None
+
+        for idx, frame_bgr in _frame_iter(Path(video)):
+            if max_frames is not None and idx >= max_frames:
+                break
+
+            new_future = pool.submit(_safe_detect, detect, frame_bgr)
+
+            if det_future is not None:
+                prev_dets = det_future.result()
+                tracks_per_frame = _safe_tracker_update(
+                    tracker, prev_dets, prev_frame, prev_idx,
+                )
+                _record_tracker_output(out_frames, tracks_per_frame)
+                n_processed += 1
+
+            det_future = new_future
+            prev_frame = frame_bgr
+            prev_idx = idx
+
+        if det_future is not None:
+            prev_dets = det_future.result()
+            tracks_per_frame = _safe_tracker_update(
+                tracker, prev_dets, prev_frame, prev_idx,
+            )
+            _record_tracker_output(out_frames, tracks_per_frame)
+            n_processed += 1
+
+    dt = time.time() - t0
+    log.info(
+        "%d frames in %.1fs (%.2f FPS) [pipelined]", n_processed, dt,
+        n_processed / max(dt, 1e-6),
+    )
+    return out_frames
 
 
 def _detect_and_track(
@@ -111,60 +303,26 @@ def _detect_and_track(
 
     detect = make_multi_scale_detector(
         weights=weights,
-        imgsz_list=list(DETECTOR_IMGSZ_ENSEMBLE),
+        imgsz_list=list(_resolve_imgsz_ensemble()),
         conf=DETECTOR_CONF,
         iou=DETECTOR_IOU,
         device=device,
-        ensemble_iou=DETECTOR_ENSEMBLE_IOU,
+        ensemble_iou=_resolve_ensemble_iou(),
         classes=[PERSON_CLASS_ID],
-        tta_flip=False,
+        tta_flip=_resolve_tta_flip(),
     )
     tracker = make_tracker(
         reid_weights=reid_weights, device=device, half=False,
     )
 
-    out_frames: List[FrameDetections] = []
-    n_processed = 0
-    t0 = time.time()
-    for idx, frame_bgr in iter_video_frames(Path(video)):
-        if max_frames is not None and idx >= max_frames:
-            break
-
-        dets = detect(frame_bgr)  # (N, 6) [x1, y1, x2, y2, conf, cls]
-        if dets.size == 0:
-            dets = np.zeros((0, 6), dtype=np.float32)
-
-        try:
-            tracks_per_frame = tracker.update(dets, frame_bgr)
-        except Exception as exc:
-            log.exception(
-                "DeepOcSort.update failed at frame %d: %s", idx, exc,
-            )
-            tracks_per_frame = np.zeros((0, 7), dtype=np.float32)
-
-        if tracks_per_frame is None or len(tracks_per_frame) == 0:
-            out_frames.append(FrameDetections(
-                np.empty((0, 4), dtype=np.float32),
-                np.empty((0,), dtype=np.float32),
-                np.empty((0,), dtype=np.float32),
-            ))
-        else:
-            tracks_per_frame = np.asarray(tracks_per_frame, dtype=np.float32)
-            xyxys = tracks_per_frame[:, 0:4].astype(np.float32)
-            tids = tracks_per_frame[:, 4].astype(np.float32)
-            if tracks_per_frame.shape[1] > 5:
-                confs = tracks_per_frame[:, 5].astype(np.float32)
-            else:
-                confs = np.ones(len(tracks_per_frame), dtype=np.float32)
-            out_frames.append(FrameDetections(xyxys, confs, tids))
-        n_processed += 1
-
-    dt = time.time() - t0
-    log.info(
-        "%d frames in %.1fs (%.2f FPS)", n_processed, dt,
-        n_processed / max(dt, 1e-6),
+    if _resolve_pipeline_parallel():
+        return _detect_and_track_pipelined(
+            video=video, detect=detect, tracker=tracker,
+            max_frames=max_frames,
+        )
+    return _detect_and_track_serial(
+        video=video, detect=detect, tracker=tracker, max_frames=max_frames,
     )
-    return out_frames
 
 
 def run_pipeline_on_video(
@@ -223,9 +381,31 @@ def run_pipeline_on_video(
             video=video, weights=weights, reid_weights=reid_weights,
             device=device, max_frames=max_frames,
         )
+        # Optional FN-recovery pass (env-gated; no-op when disabled).
+        from tracking import fn_recovery
+        if fn_recovery.is_enabled():
+            n_added = fn_recovery.recover_missing_detections(frames)
+            log.info("fn-recovery added %d synthetic detections", n_added)
+        # Optional SAM 2.1 per-bbox verifier (env-gated; no-op when
+        # disabled). Drops phantom detections by checking that SAM's
+        # foreground mask actually fills the bbox. Image predictor only
+        # -- never video predictor -- so the past mask-propagation
+        # identity-fusion failure mode cannot occur.
+        from tracking import sam2_verifier
+        if sam2_verifier.is_enabled():
+            n_dropped = sam2_verifier.verify_cache(frames, video=video)
+            log.info("sam-verify dropped %d phantom detections", n_dropped)
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         joblib.dump(frames, str(cache_path))
         log.info("wrote cache: %s (%d frames)", cache_path, len(frames))
+        sidecar = cache_path.with_suffix(cache_path.suffix + ".video.json")
+        try:
+            sidecar.write_text(json.dumps({
+                "video": str(Path(video).resolve()),
+                "frames": int(len(frames)),
+            }))
+        except OSError as exc:
+            log.warning("could not write video sidecar %s: %s", sidecar, exc)
 
     log.info("building tracks from cache: %s", cache_path)
     tracks = build_tracks(

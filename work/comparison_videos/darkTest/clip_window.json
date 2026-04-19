@@ -1,0 +1,16 @@
+{
+  "clip": "darkTest",
+  "out": "/Users/arnavchokshi/Desktop/BEST_ID_STRAT/work/comparison_videos/darkTest/darkTest_ours_vs_StrongSort_base.mp4",
+  "frames_written": 285,
+  "wall_seconds": 3.7,
+  "fps": 23.783,
+  "start_frame": 0,
+  "end_frame": 284,
+  "out_resolution": [
+    1920,
+    640
+  ],
+  "worst_baseline": "StrongSort (base)",
+  "mean_gt_density": 14.0,
+  "clip_window_seconds": 11.98
+}

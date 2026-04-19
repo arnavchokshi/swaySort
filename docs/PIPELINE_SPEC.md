@@ -27,6 +27,16 @@ see [`EXPERIMENTS_LOG.md`](EXPERIMENTS_LOG.md).
 | ffmpeg-python | `>=0.2` | |
 | joblib | `>=1.3` | cache + tracks pickle format |
 
+Optional dependencies (only required when the matching env-gated
+extension in §3.8 is enabled — the default v9 pipeline does not
+need them):
+
+| Component | Pin | Required by |
+|---|---|---|
+| sam2 | `>=1.0` | `BEST_ID_SAM_VERIFY=1` (per-bbox verifier, §3.8.2) |
+| rtmlib | `>=0.0.13` | `BEST_ID_POSE_MERGE=1` (RTMW pose-merge gate, §3.8.3) |
+| onnxruntime / onnxruntime-gpu | `>=1.17` | `BEST_ID_POSE_MERGE=1` (rtmlib ONNX backend) |
+
 CUDA install (Linux):
 ```bash
 pip install torch torchvision \
@@ -126,6 +136,20 @@ Exact configuration:
 | `tta_flip` | `False` |
 | `device` | `cuda:0` / `mps` / `cpu` (caller's choice) |
 
+**v9 dark-recovery preprocessing.** When invoked via
+`work/run_all_tests.py` (the production runner), the env var
+`BEST_ID_DARK_PROFILE=v9` is set automatically. This causes
+`tracking/dark_recovery.py` to apply CLAHE on the LAB L-channel
+plus luma-adaptive gamma in `[1.0, 2.5]` to every input frame
+whose mean luma falls below `BEST_ID_DARK_LUMA=80`. Bright
+frames skip preprocessing entirely (the cache is bit-identical
+to v8 there). Validated on the 9-clip benchmark at +0.0056 mean
+IDF1 with +0.0502 on `darkTest`. Override via
+`BEST_ID_DARK_PROFILE=` (empty) or by setting
+`BEST_ID_DARK_CLAHE` / `BEST_ID_DARK_GAMMA` explicitly. See
+§3.8.1 for the full env-var matrix and `EXPERIMENTS_LOG.md §7`
+for the sweep that selected these defaults.
+
 ### 3.2 Stage 2 — DeepOcSort + OSNet ReID
 
 Implementation: `tracking.deepocsort_runner.make_tracker`.
@@ -204,12 +228,12 @@ constant is named):
 | `overlap_merge_min_frames` | `5` | `cfg["pp_overlap_merge_min_frames"]` |
 | `edge_trim_conf_thresh` | `0.0` (off) | `cfg["pp_edge_trim_conf_thresh"]` |
 | `edge_trim_max_frames` | `0` (off) | `cfg["pp_edge_trim_max_frames"]` |
-| `pose_extractor` | `None` | pose-cos disabled |
-| `pose_cos_thresh` | `0.0` | pose-cos disabled |
+| `pose_extractor` | `None` *or* `RTMWPoseExtractor()` | `None` by default; populated when `BEST_ID_POSE_MERGE=1` (§3.8.3) |
+| `pose_cos_thresh` | `0.0` *or* env value | `0.0` by default; reads `BEST_ID_POSE_MERGE_THRESH` (default 0.50) when pose-merge is on |
 | `pose_max_gap` | `120` | `cfg["pp_pose_max_gap"]` |
 | `pose_min_iou_for_pair` | `0.0` | `cfg["pp_pose_min_iou_for_pair"]` |
 | `pose_max_center_dist` | `150.0` | `cfg["pp_pose_max_center_dist"]` |
-| `frame_loader` | `None` | |
+| `frame_loader` | `None` *or* video-frame callable | `None` by default; built by `_make_frame_loader_for_cache` from the sidecar JSON when pose-merge is on |
 
 What this stage does, in order:
 
@@ -310,6 +334,105 @@ Exact kwargs:
 | Kwarg | Value |
 |---|---|
 | `window` | `21` |
+
+### 3.8 Env-gated extensions (default OFF unless noted)
+
+Three optional capabilities ship behind env vars. **The default
+pipeline does not load any of them; `BEST_ID_DARK_PROFILE=v9` is
+the only one set by `work/run_all_tests.py`** and it is a no-op
+on every well-lit clip.
+
+#### 3.8.1 Dark-recovery preprocessing (DEFAULT ON via runner)
+
+Implementation: `tracking/dark_recovery.py`. Hooks into stage 1
+inside `tracking/multi_scale_detector.py:make_views(frame_bgr)`,
+modifying the input frame **before** the YOLO forward.
+
+| Env var | Default | Effect |
+|---|---|---|
+| `BEST_ID_DARK_PROFILE=v9` | unset (set by `work/run_all_tests.py`) | shorthand: `CLAHE=1` + `GAMMA=auto` |
+| `BEST_ID_DARK_CLAHE=1` | unset | apply CLAHE on LAB L-channel (clip 2.0, tile 8×8) |
+| `BEST_ID_DARK_GAMMA=auto` *or* float | unset | gamma-correct in LAB L; `auto` = luma-adaptive in `[1.0, 2.5]` |
+| `BEST_ID_DARK_LUMA=80` | 80 | mean-luma threshold below which a frame is "dark" |
+| `BEST_ID_DARK_BRIGHTEN=<f>` | unset | enable multi-exposure ensemble (extra detector pass on luma×f) — REJECTED in §7.6 |
+| `BEST_ID_ADAPTIVE_CONF=<delta>` | unset | subtract delta from `conf` on dark frames — REJECTED in §7.6 |
+| `BEST_ID_SOFT_NMS=<sigma>` | unset | replace cross-scale hard NMS with linear Soft-NMS — REJECTED at default sigma in §7.7 |
+
+CLAHE+gamma fire only on frames brighter than `LUMA` is FALSE
+(i.e. mean luma < 80). Bright frames pass through byte-identical
+to v8.
+
+Validated: +0.0056 mean IDF1 / +0.0502 darkTest IDF1 on the 9-clip
+benchmark. See `EXPERIMENTS_LOG.md §7.1`.
+
+#### 3.8.2 SAM 2.1 per-bbox verifier (OPT-IN)
+
+Implementation: `tracking/sam2_verifier.py`. Runs after stage 2
+DeepOcSort (mutates the cache before stage 3 post-processing).
+For each tracker bbox, asks the SAM 2.1 **image** predictor (NOT
+the video predictor — the video predictor is the path that
+historically fused identities; see `EXPERIMENTS_LOG.md §3`)
+"what fraction of pixels inside the box are foreground?". Drops
+the box if `fill < BEST_ID_SAM_VERIFY_FILL`.
+
+| Env var | Default | Effect |
+|---|---|---|
+| `BEST_ID_SAM_VERIFY=1` | unset | enable the verifier pass |
+| `BEST_ID_SAM_VERIFY_WEIGHTS` | `weights/sam2/sam2.1_hiera_tiny.pt` | path to SAM 2.1 checkpoint |
+| `BEST_ID_SAM_VERIFY_CFG` | `sam2.1_hiera_t.yaml` | model config name |
+| `BEST_ID_SAM_VERIFY_FILL` | `0.30` | mask fill threshold below which a box is a phantom |
+| `BEST_ID_SAM_VERIFY_CONF_MAX` | `0.55` | skip boxes with detector conf ≥ this (high-conf boxes are almost never phantoms) |
+| `BEST_ID_SAM_VERIFY_AREA_MAX` | `100_000` | skip boxes with area ≥ this many px |
+| `BEST_ID_SAM_VERIFY_STRIDE` | `5` | run on every Nth frame (set to `1` for the validated win) |
+| `BEST_ID_SAM_VERIFY_DEVICE` | `cuda:0` if available else `cpu` | torch device |
+
+Validated config: `BEST_ID_SAM_VERIFY=1 BEST_ID_SAM_VERIFY_STRIDE=1`.
+Result on the 9-clip benchmark: +0.0023 mean IDF1, **+0.0082 on
+`loveTest`** (recovers 219 of 2246 misses), -0.0056 on
+`MotionTest`. **Negative interaction with v9 dark on `darkTest`**
+(-0.0096 vs v9 dark alone). Cost: ~80 ms/frame on A10. See
+`EXPERIMENTS_LOG.md §7.3`.
+
+#### 3.8.3 RTMW pose-merge AND-gate (OPT-IN)
+
+Implementation: `tracking/rtmw_pose_merge.py`. Wired through
+`tracking.postprocess.postprocess_tracks` as the `pose_extractor`
++ `pose_cos_thresh` arguments. Acts as a **secondary veto** on the
+existing IoU/proximity ID-merge gate: a candidate merge passes
+only if BOTH the IoU/proximity gate AND the pose-similarity gate
+accept it. This is an AND-gate, not an OR (the previous v6 OR
+attempt regressed BigTest; see `EXPERIMENTS_LOG.md §3`).
+
+Features come from rtmlib's RTMW Wholebody model: 133 keypoints
+(17 body, 6 feet, 68 face, 21+21 hands). Similarity is a weighted
+bbox-normalised cosine.
+
+| Env var | Default | Effect |
+|---|---|---|
+| `BEST_ID_POSE_MERGE=1` | unset | enable the gate |
+| `BEST_ID_POSE_MERGE_THRESH` | `0.50` | cosine similarity below this rejects the merge |
+| `BEST_ID_POSE_MERGE_BODY_W` | `0.40` | weight for body cosine |
+| `BEST_ID_POSE_MERGE_HAND_W` | `0.40` | weight for combined hand cosine |
+| `BEST_ID_POSE_MERGE_FACE_W` | `0.20` | weight for face cosine |
+| `BEST_ID_POSE_MERGE_MIN_VIS` | `0.30` | min keypoint visibility (RTMW score) to include in cosine |
+| `BEST_ID_POSE_MERGE_MODE` | `balanced` | rtmlib mode: `lightweight` / `balanced` / `performance` |
+
+Validated config: `BEST_ID_POSE_MERGE=1 BEST_ID_POSE_MERGE_MIN_VIS=0.50`.
+Result on the 9-clip benchmark: +0.0003 mean IDF1, +0.0027 on
+`MotionTest`, no regression on any clip. The gate logs each fired
+decision (`pose-merge: cos=0.92 thresh=0.50 -> ACCEPT/REJECT`)
+to make silent failure detectable.
+
+**Sidecar requirement.** The pose extractor needs the original
+video frame to crop a bbox-relative input. Stage 0
+(`tracking.run_pipeline.run_pipeline_on_video`) writes a
+`<cache>.cache.pkl.video.json` sidecar with the absolute video
+path next to every cache. `_make_frame_loader_for_cache` reads
+this sidecar to build the frame loader; it falls back to sibling
+guesses for backward compatibility, then to a no-op loader (with
+a warning) if the video can't be located. See
+`EXPERIMENTS_LOG.md §7.4` for the silent-failure debugging that
+motivated the sidecar.
 
 ---
 
@@ -502,6 +625,31 @@ tracks = build_tracks(
 For a 30-second 30-FPS clip on an A100: **~1–1.5 minutes** end-to-end.
 On Apple M-series MPS: ~2–4× slower depending on the model.
 
+### 7.1. Validated end-to-end measurements
+
+500 frames of `loveTest` (1080p), single A100-40GB SXM, no other
+GPU jobs running, with the entry point in `tracking/run_pipeline.py`:
+
+| Configuration | Wall time | ms / frame | FPS (loop) |
+|---|---:|---:|---:|
+| Baseline (no env-var flags) | 31.88 s | 63.8 | 18.06 |
+| `BEST_ID_TRT_ENGINE_DIR=weights/` | 27.03 s | 54.1 | 21.79 |
+
+→ TensorRT FP32 engines for the YOLO multi-scale stack deliver a
+**+15.2 % wall-clock reduction** (1.18× speedup) with output
+equivalence verified by `scripts/regression_check.py` (same 14
+final tracks; identical long-gap pose-merge events; per-detection
+bbox L∞ < 5 px and confidence L∞ < 0.05 vs the PyTorch FP32 path —
+i.e. cuDNN ↔ TRT FP32 numerical noise band, no algorithmic change).
+
+The other three optional flags (`BEST_ID_PREFETCH`,
+`BEST_ID_PIPELINE_PARALLEL`, `BEST_ID_GPU_NMS`) measured inside
+the run-to-run noise band on A100 and are recommended OFF on CUDA;
+they are validated MPS optimizations (`PREFETCH=4` +
+`PIPELINE_PARALLEL=1` compose to +13.8 % wall on Apple Silicon).
+See `README.md#optional-speed-flags-lossless` for the per-device
+recommended config.
+
 ---
 
 ## 8. Known constraints
@@ -523,3 +671,23 @@ On Apple M-series MPS: ~2–4× slower depending on the model.
   (`velocity_extrapolate_cap_px = 200`). Without it, a few high-velocity
   end-of-clip tracks extrapolate off-frame and break the position-jump
   gate.
+- **Do not enable `BEST_ID_SOFT_NMS` at the default `sigma=0.5`**.
+  At the default low score-threshold, Soft-NMS preserves 12k+
+  overlapping FP per clip on `MotionTest` and collapses MOTA from
+  0.86 → 0.0005. Implemented and env-gated, but the default sigma
+  is unsafe; raise the score threshold first.
+- **Do not stack `BEST_ID_SAM_VERIFY` with v9 dark on
+  `darkTest`-style low-light clips.** SAM marks marginal low-luma
+  boxes as phantoms (mask fill < 0.30) and removes detections
+  that the gamma-corrected detector legitimately recovered. Net
+  −0.0096 on `darkTest` vs v9 dark alone.
+- **Do not enable `BEST_ID_DARK_BRIGHTEN` or
+  `BEST_ID_ADAPTIVE_CONF` on top of v9 dark.** Both regressed
+  `darkTest` by 0.07–0.10 IDF1 across every variant tested
+  (`EXPERIMENTS_LOG.md §7.6`). Auto-gamma already saturates the
+  LAB L-channel headroom; further amplification or threshold
+  reduction is double-counting.
+- **Do not enable `BEST_ID_FN_RECOVERY=1`** (cardinality voting).
+  Every variant tested regressed mean IDF1; synthetic
+  extrapolated boxes lack appearance evidence so DeepOcSort
+  assigns them to wrong tracks (new IDS + FP).

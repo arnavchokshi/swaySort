@@ -1,0 +1,11 @@
+Report complete. Here is a brief recap of what was delivered:
+
+- **Section 1** — 14 distinct RTMW integration strategies (above the requested floor of 10), grouped by where they slot into the existing pipeline (`_id_merge_pose_pass`, `_id_merge` Pass-1, `filter_tracks_post_merge`, OSNet preprocessing, online tracker). Each is analyzed for failure-mode avoidance against the 5 documented past pose failures, expected per-clip lift on `loveTest`/`MotionTest`/`darkTest`, RTMW-forward cost, GPU memory, and risk. A summary ranking table is at the end of the section.
+
+- **Section 2** — RTMW model variants with exact checkpoint URLs from the mmpose model zoo (RTMW-m/l/x at 256×192 and 384×288, with FLOPs and Whole AP/AR per body part), A10 latency projections (~3–9 ms/crop depending on variant), per-clip crop budgets, GPU memory budget alongside YOLO26s + OSNet, top-down justification, and a `darkTest`-specific note.
+
+- **Section 3** — Three sequenced experiments (visibility-weighted whole-body AND-gate; hand-fingerprint AND-gate; pose-stability phantom filter) with concrete pseudocode for the `RTMWExtractor` adapter matching the existing `pose_extractor.extract(frame_bgr, bbox) -> (K, 3)` and static `cosine(a, b)` protocol at `tracking/postprocess.py:524` and `:578`, integration points cited at `tracking/best_pipeline.py:275–296` and `:123–147`, exact metric to measure, expected lifts, and a kill criterion for each.
+
+- **Section 4** — References including the RTMW arXiv paper, mmpose model-zoo checkpoint URLs, recent (2024-2025) pose-aware ReID/MOT work (Pose2ID, KPR, OccluTrack, AlphaPose, DWPose), and a complete index of the existing pipeline files/lines this report integrates against.
+
+Top single recommendation: **Experiment 2 (hand-fingerprint AND-gate)** — the only strategy that exploits a discriminator OSNet structurally cannot see (hands at 8–15 px in OSNet's downsampled crop) while being insulated from the documented body-pose over-merge failure mode. Projected `loveTest` lift: +0.005 to +0.015 IDF1.
