@@ -100,6 +100,17 @@ def _resolve_pipeline_parallel() -> bool:
     return raw in {"1", "true", "yes", "on"}
 
 
+def _resolve_adaptive_anchor_stride() -> int:
+    """Read BEST_ID_ADAPTIVE_ANCHOR flag. 1=off, N>1=anchor stride."""
+    raw = os.environ.get("BEST_ID_ADAPTIVE_ANCHOR", "").strip()
+    if not raw:
+        return 1
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return 1
+
+
 def _frame_iter(video: Path) -> Iterator[Tuple[int, np.ndarray]]:
     """Choose sync vs prefetched frame decoder based on env var."""
     depth = _resolve_prefetch_depth()
@@ -208,17 +219,92 @@ def _detect_and_track_serial(
     out_frames: List[FrameDetections] = []
     n_processed = 0
     t0 = time.time()
+    
+    adaptive_stride = _resolve_adaptive_anchor_stride()
+    prev_gray = None
+    prev_xyxys = None
+    prev_tids = None
+    prev_confs = None
+    
+    import cv2
+
     for idx, frame_bgr in _frame_iter(Path(video)):
         if max_frames is not None and idx >= max_frames:
             break
-        dets = _safe_detect(detect, frame_bgr)
-        tracks_per_frame = _safe_tracker_update(tracker, dets, frame_bgr, idx)
-        _record_tracker_output(out_frames, tracks_per_frame)
+            
+        if adaptive_stride > 1:
+            gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+            is_anchor = (idx % adaptive_stride == 0) or prev_xyxys is None or len(prev_xyxys) == 0
+            
+            if is_anchor:
+                dets = _safe_detect(detect, frame_bgr)
+                tracks_per_frame = _safe_tracker_update(tracker, dets, frame_bgr, idx)
+                _record_tracker_output(out_frames, tracks_per_frame)
+                
+                prev_gray = gray
+                if tracks_per_frame is not None and len(tracks_per_frame) > 0:
+                    arr = np.asarray(tracks_per_frame, dtype=np.float32)
+                    prev_xyxys = arr[:, 0:4].copy()
+                    prev_tids = arr[:, 4].copy()
+                    if arr.shape[1] > 5:
+                        prev_confs = arr[:, 5].copy()
+                    else:
+                        prev_confs = np.ones(len(arr), dtype=np.float32)
+                else:
+                    prev_xyxys = np.empty((0, 4), dtype=np.float32)
+                    prev_tids = np.empty((0,), dtype=np.float32)
+                    prev_confs = np.empty((0,), dtype=np.float32)
+            else:
+                good_xyxys = []
+                good_tids = []
+                good_confs = []
+                
+                for i in range(len(prev_xyxys)):
+                    x1, y1, x2, y2 = prev_xyxys[i]
+                    pts = np.array([[[x1, y1]], [[x2, y1]], [[x2, y2]], [[x1, y2]]], dtype=np.float32)
+                    next_pts, status, err = cv2.calcOpticalFlowPyrLK(
+                        prev_gray, gray, pts, None,
+                        winSize=(15, 15), maxLevel=2,
+                        criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
+                    )
+                    if next_pts is not None and status is not None and status.flatten().sum() >= 3:
+                        good_pts = next_pts[status.flatten() == 1]
+                        nx1 = float(np.min(good_pts[:, 0, 0]))
+                        ny1 = float(np.min(good_pts[:, 0, 1]))
+                        nx2 = float(np.max(good_pts[:, 0, 0]))
+                        ny2 = float(np.max(good_pts[:, 0, 1]))
+                        nx1, ny1 = max(0, nx1), max(0, ny1)
+                        good_xyxys.append([nx1, ny1, nx2, ny2])
+                        good_tids.append(prev_tids[i])
+                        good_confs.append(prev_confs[i])
+                        
+                if len(good_xyxys) > 0:
+                    prev_xyxys = np.array(good_xyxys, dtype=np.float32)
+                    prev_tids = np.array(good_tids, dtype=np.float32)
+                    prev_confs = np.array(good_confs, dtype=np.float32)
+                    
+                    pseudo = np.zeros((len(good_xyxys), 7), dtype=np.float32)
+                    pseudo[:, 0:4] = prev_xyxys
+                    pseudo[:, 4] = prev_tids
+                    pseudo[:, 5] = prev_confs
+                    _record_tracker_output(out_frames, pseudo)
+                else:
+                    prev_xyxys = np.empty((0, 4), dtype=np.float32)
+                    _record_tracker_output(out_frames, np.empty((0, 7), dtype=np.float32))
+                
+                prev_gray = gray
+        else:
+            dets = _safe_detect(detect, frame_bgr)
+            tracks_per_frame = _safe_tracker_update(tracker, dets, frame_bgr, idx)
+            _record_tracker_output(out_frames, tracks_per_frame)
+            
         n_processed += 1
+        
     dt = time.time() - t0
     log.info(
-        "%d frames in %.1fs (%.2f FPS)", n_processed, dt,
+        "%d frames in %.1fs (%.2f FPS) %s", n_processed, dt,
         n_processed / max(dt, 1e-6),
+        "[Adaptive LK-Flow Enabled]" if adaptive_stride > 1 else ""
     )
     return out_frames
 
@@ -316,10 +402,15 @@ def _detect_and_track(
     )
 
     if _resolve_pipeline_parallel():
-        return _detect_and_track_pipelined(
-            video=video, detect=detect, tracker=tracker,
-            max_frames=max_frames,
-        )
+        adaptive_stride = _resolve_adaptive_anchor_stride()
+        if adaptive_stride > 1:
+            log.warning("Pipelining is disabled because BEST_ID_ADAPTIVE_ANCHOR is enabled.")
+        else:
+            return _detect_and_track_pipelined(
+                video=video, detect=detect, tracker=tracker,
+                max_frames=max_frames,
+            )
+            
     return _detect_and_track_serial(
         video=video, detect=detect, tracker=tracker, max_frames=max_frames,
     )
