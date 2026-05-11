@@ -1,4 +1,4 @@
-"""Render side-by-side comparison videos: Ours (v9) vs the worst-performing
+"""Render side-by-side comparison videos: Ours + count prior vs the worst-performing
 baseline tracker on each clip's densest 10-15 s window.
 
 Inputs:
@@ -57,7 +57,7 @@ if str(REPO) not in sys.path:
 
 log = logging.getLogger("render_side_by_side")
 
-OURS_LABEL = "Ours (v9 shipped)"
+OURS_LABEL = "Ours (current + count prior)"
 BASELINES = [
     "ByteTrack (base)",
     "OcSort (base, no ReID)",
@@ -305,7 +305,7 @@ def render_side_by_side(
 
         ours_panel = _draw_banner(
             ours_frame,
-            "OURS (v9 shipped)  -  best.pt MS + post-process",
+            "OURS + COUNT PRIOR  -  best.pt MS + post-process",
             f"{clip_name}  frame {fi+1}  boxes {n_ours}",
             GREEN, extra_lines=ours_extra,
         )
@@ -426,7 +426,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
                         "concatenation (composite is 2x wider).")
     p.add_argument("--prefer-pkl", action="store_true",
                    help="Read Ours tracks from work/results/<clip>/tracks.pkl "
-                        "even when the A10 MOT file is also present. "
+                        "even when the benchmark MOT file is also present. "
                         "Default: prefer the MOT file (it always matches the "
                         "metrics that run_full_benchmark.py wrote into the "
                         "banner).")
@@ -479,7 +479,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             continue
         ours_metrics = ours_row.get("metrics", {})
         ours_pkl = args.ours_tracks_root / clip_name / "tracks.pkl"
-        ours_mot = args.mot_out_root / clip_name / "Ours_v9_shipped.txt"
+        ours_mot = args.mot_out_root / clip_name / "Ours_current_+_count_prior.txt"
+        legacy_ours_mot = args.mot_out_root / clip_name / "Ours_v9_shipped.txt"
         baseline_mot = (
             args.mot_out_root / clip_name /
             f"{_safe_label(worst_name)}.txt"
@@ -497,6 +498,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             ours_source = ours_pkl
         elif ours_mot.is_file():
             ours_source = ours_mot
+        elif legacy_ours_mot.is_file():
+            ours_source = legacy_ours_mot
         elif ours_pkl.is_file() and ours_pkl.stat().st_size > 1024:
             ours_source = ours_pkl
 
@@ -514,7 +517,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 log.info("[%s] Ours from pkl: %s", clip_name, ours_source)
             else:
                 ours_pf = _parse_mot_file(ours_source)
-                log.info("[%s] Ours from A10 MOT: %s",
+                log.info("[%s] Ours from benchmark MOT: %s",
                          clip_name, ours_source)
             base_pf = _parse_mot_file(baseline_mot)
             cap = cv2.VideoCapture(str(video_path))

@@ -1,25 +1,26 @@
 #!/usr/bin/env bash
-# Sync the BEST_ID_STRAT codebase + the 9 ground-truthed test clips to the
-# Lambda Labs A10 GPU instance, then optionally bootstrap a Python env on it.
+# Sync the BEST_ID_STRAT codebase + the ground-truthed CVAT test clips to a
+# GPU instance, then optionally bootstrap a Python env on it.
 #
-# Layout on the A10 after a successful run:
+# Layout on the GPU after a successful run:
 #   /home/ubuntu/code/best_id_strat/   <- codebase (this repo, no work/ artifacts)
-#   /home/ubuntu/clips/                <- the 9 clip folders (videos + gt/)
+#   /home/ubuntu/clips/                <- clip folders (videos + gt/)
 #   /home/ubuntu/clips/<clip>/<video>  <- matches configs/clips.remote.example.json
 #
 # Usage:
 #   scripts/sync_to_a10.sh            # sync code + clips, no env install
 #   scripts/sync_to_a10.sh code       # sync only the code
 #   scripts/sync_to_a10.sh clips      # sync only the clips
-#   scripts/sync_to_a10.sh env        # only run the env-install step on the A10
+#   scripts/sync_to_a10.sh env        # only run the env-install step on the GPU
 #   scripts/sync_to_a10.sh all        # code + clips + env install (full bootstrap)
 #
 # Env vars (override defaults):
 #   A10_HOST       (default: ubuntu@141.148.49.145)
+#   A10_PORT       (default: 22)
 #   A10_KEY        (default: ~/.ssh/pose-tracking.pem)
 #   A10_CODE_DIR   (default: /home/ubuntu/code/best_id_strat)
 #   A10_CLIPS_DIR  (default: /home/ubuntu/clips)
-#   CLIPS_SRC_ROOT (default: /Users/arnavchokshi/Desktop)
+#   CLIPS_SRC_ROOT (default: /Users/arnavchokshi/Desktop/CV_pipeline/CVAT)
 #   A10_ENV_NAME   (default: pose-bench)
 #
 # This script is idempotent: rsync only ships changed files.
@@ -27,30 +28,34 @@
 set -euo pipefail
 
 A10_HOST="${A10_HOST:-ubuntu@141.148.49.145}"
+A10_PORT="${A10_PORT:-22}"
 A10_KEY="${A10_KEY:-$HOME/.ssh/pose-tracking.pem}"
 A10_CODE_DIR="${A10_CODE_DIR:-/home/ubuntu/code/best_id_strat}"
 A10_CLIPS_DIR="${A10_CLIPS_DIR:-/home/ubuntu/clips}"
-CLIPS_SRC_ROOT="${CLIPS_SRC_ROOT:-/Users/arnavchokshi/Desktop}"
+CLIPS_SRC_ROOT="${CLIPS_SRC_ROOT:-/Users/arnavchokshi/Desktop/CV_pipeline/CVAT}"
 A10_ENV_NAME="${A10_ENV_NAME:-pose-bench}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# All 9 ground-truthed clip directories (must exactly match
+# Ground-truthed clip directories (must exactly match
 # configs/clips.remote.example.json names).
 CLIPS=(
+  2pplTest
   BigTest
-  easyTest
-  adiTest
-  mirrorTest
-  gymTest
-  loveTest
   MotionTest
+  easyTest
+  eldonTest
+  adiTest
+  gymTest
+  jealousTest
+  jhumarTest
+  loveTest
+  mirrorTest
   shorterTest
-  darkTest
 )
 
-SSH_OPTS=(-i "$A10_KEY" -o StrictHostKeyChecking=no)
-RSYNC_SSH="ssh -i $A10_KEY -o StrictHostKeyChecking=no"
+SSH_OPTS=(-i "$A10_KEY" -p "$A10_PORT" -o StrictHostKeyChecking=no)
+RSYNC_SSH="ssh -i $A10_KEY -p $A10_PORT -o StrictHostKeyChecking=no"
 
 mode="${1:-default}"
 
@@ -124,7 +129,7 @@ FILTER
 }
 
 setup_env() {
-  log "bootstrapping conda env '$A10_ENV_NAME' on A10"
+  log "bootstrapping conda env '$A10_ENV_NAME' on GPU"
   # Heredoc is quoted to prevent local expansion of $vars.
   # shellcheck disable=SC2087
   ssh "${SSH_OPTS[@]}" "$A10_HOST" bash -se <<EOF
@@ -140,7 +145,7 @@ fi
 
 conda activate '$A10_ENV_NAME'
 
-echo "[env] installing torch 2.4.x cu121 wheel (matches A10 driver 535.x / cu12)"
+echo "[env] installing torch 2.4.x cu121 wheel"
 pip install --upgrade pip
 pip install --index-url https://download.pytorch.org/whl/cu121 \
     torch==2.4.1+cu121 torchvision==0.19.1+cu121

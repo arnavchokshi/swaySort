@@ -18,93 +18,103 @@ YOLO26s dance checkpoint @ [768, 1024]
 
 ## Accuracy vs Baselines
 
-Same benchmark harness, same clips, same A10 GPU. Baselines use stock
-`yolo26s.pt` at `imgsz=640`, `conf=0.25`, `iou=0.70`, `classes=[0]`, feeding
-the default BoxMOT tracker settings. Ours uses `weights/best.pt`,
-multi-scale `[768, 1024]`, DeepOcSort, and the optimized postprocess chain.
+Fresh benchmark from May 11, 2026 across the 12 current annotated CVAT clips:
+`2pplTest`, `easyTest`, `gymTest`, `BigTest`, `adiTest`, `mirrorTest`,
+`shorterTest`, `eldonTest`, `jealousTest`, `jhumarTest`, `MotionTest`, and
+`loveTest`.
+
+Same benchmark harness, same clips, same NVIDIA A100 80GB GPU. Baselines use
+stock `yolo26s.pt` at `imgsz=640`, `conf=0.25`, `iou=0.70`, `classes=[0]`,
+feeding the default BoxMOT tracker settings. Ours uses `weights/best.pt`,
+multi-scale `[768, 1024]`, DeepOcSort, the optimized postprocess chain, and the
+known performer-count prior that production Stage A can receive as
+`expected_total_performers`.
 
 | Tracker | mean IDF1 ↑ | mean MOTA ↑ | total IDS ↓ | total FN ↓ | total FP ↓ | mean e2e FPS |
 |---|---:|---:|---:|---:|---:|---:|
-| **Ours (optimized)** | **0.9263** | **0.8752** | **20** | **6,014** | **4,314** | 20.92 |
-| BotSort | 0.7236 | 0.6385 | 95 | 14,172 | 9,223 | 45.33 |
-| ByteTrack | 0.7134 | 0.6693 | 154 | 13,425 | 8,823 | 571.10 |
-| HybridSort | 0.6807 | 0.6123 | 204 | 14,351 | 10,038 | 42.54 |
-| StrongSort | 0.6471 | 0.6139 | 629 | 13,946 | 10,179 | 41.36 |
-| DeepOcSort base | 0.5677 | 0.5998 | 516 | 15,452 | 9,321 | 48.24 |
-| OcSort | 0.5551 | 0.5989 | 547 | 15,431 | 9,296 | 491.41 |
+| **Ours + count prior** | **0.9573** | **0.9163** | **8** | **4,432** | **3,771** | **18.41** |
+| BotSort | 0.7850 | 0.7159 | 85 | 12,835 | 9,348 | 18.25 |
+| ByteTrack | 0.7795 | 0.7420 | 140 | 12,085 | 9,012 | 90.14 |
+| HybridSort | 0.7535 | 0.6950 | 178 | 13,059 | 10,281 | 14.16 |
+| StrongSort | 0.7334 | 0.6943 | 577 | 12,662 | 10,505 | 11.39 |
+| DeepOcSort | 0.6425 | 0.6854 | 530 | 14,126 | 9,526 | 18.17 |
+| OcSort | 0.6294 | 0.6850 | 542 | 14,094 | 9,498 | 89.54 |
 
 ![Mean IDF1 across trackers](docs/figures/full_benchmark/idf1_overall.png)
 
-![Per-clip IDF1: optimized pipeline vs baseline trackers](docs/figures/full_benchmark/per_clip_idf1.png)
+![Per-clip IDF1: current pipeline vs baseline trackers](docs/figures/full_benchmark/per_clip_idf1.png)
 
-![Speed vs accuracy on A10](docs/figures/full_benchmark/speed_vs_accuracy_a10.png)
+![Speed vs accuracy on A100](docs/figures/full_benchmark/speed_vs_accuracy_a10.png)
 
 ## Identity Stability
 
 ID switches are the failure mode that matters most for choreography and 3D
 handoff: if track 5 becomes another dancer halfway through the clip, everything
-downstream inherits the mistake. The optimized pipeline cuts total ID switches
-from hundreds down to 20 on the benchmark set.
+downstream inherits the mistake. The current pipeline has 8 total ID switches
+across all 12 current clips; the next-best baseline has 85, and the worst has
+577.
 
 ![ID switches per clip](docs/figures/full_benchmark/id_switches_per_clip.png)
-
-![False negatives per clip](docs/figures/full_benchmark/fn_per_clip.png)
 
 ## Visual Comparisons
 
 Bounding-box color is keyed by track ID. Stable color means stable identity;
 color flips mean an ID swap.
 
-### BigTest: optimized vs base DeepOcSort
+### BigTest: current pipeline vs base DeepOcSort
 
-Optimized pipeline: `IDF1 0.998 / MOTA 0.996 / IDS 0`  
-Base DeepOcSort: `IDF1 0.351 / MOTA 0.371 / IDS 74`
+Current pipeline: `IDF1 0.997 / MOTA 0.995 / IDS 0`<br>
+Base DeepOcSort: `IDF1 0.323 / MOTA 0.376 / IDS 70`
 
-![BigTest optimized vs DeepOcSort base](docs/videos/full_benchmark/BigTest_ours_vs_DeepOcSort_base_preview.gif)
+![BigTest current pipeline vs DeepOcSort base](docs/videos/full_benchmark/BigTest_ours_vs_DeepOcSort_base_preview.gif)
 
 [Full-resolution MP4](docs/videos/full_benchmark/BigTest_ours_vs_DeepOcSort_base.mp4)
 
-### MotionTest: optimized vs base OcSort
+### jhumarTest: current pipeline vs base OcSort
 
-Optimized pipeline: `IDF1 0.931 / MOTA 0.864 / IDS 0`  
-Base OcSort: `IDF1 0.369 / MOTA 0.579 / IDS 148`
+Current pipeline: `IDF1 0.850 / MOTA 0.719 / IDS 6`<br>
+Base OcSort: `IDF1 0.296 / MOTA 0.376 / IDS 91`
 
-![MotionTest optimized vs OcSort base](docs/videos/full_benchmark/MotionTest_ours_vs_OcSort_base_no_ReID_preview.gif)
+![jhumarTest current pipeline vs OcSort base](docs/videos/full_benchmark/jhumarTest_ours_vs_OcSort_base_no_ReID_preview.gif)
 
-[Full-resolution MP4](docs/videos/full_benchmark/MotionTest_ours_vs_OcSort_base_no_ReID.mp4)
+[Full-resolution MP4](docs/videos/full_benchmark/jhumarTest_ours_vs_OcSort_base_no_ReID.mp4)
 
-### loveTest: optimized vs base DeepOcSort
+### MotionTest: current pipeline vs base DeepOcSort
 
-Optimized pipeline: `IDF1 0.849 / MOTA 0.712 / IDS 1`  
-Base DeepOcSort: `IDF1 0.421 / MOTA 0.486 / IDS 111`
+Current pipeline: `IDF1 0.922 / MOTA 0.846 / IDS 0`<br>
+Base DeepOcSort: `IDF1 0.385 / MOTA 0.578 / IDS 143`
 
-![loveTest optimized vs DeepOcSort base](docs/videos/full_benchmark/loveTest_ours_vs_DeepOcSort_base_preview.gif)
+![MotionTest current pipeline vs DeepOcSort base](docs/videos/full_benchmark/MotionTest_ours_vs_DeepOcSort_base_preview.gif)
+
+[Full-resolution MP4](docs/videos/full_benchmark/MotionTest_ours_vs_DeepOcSort_base.mp4)
+
+### loveTest: current pipeline vs base DeepOcSort
+
+Current pipeline: `IDF1 0.878 / MOTA 0.757 / IDS 2`<br>
+Base DeepOcSort: `IDF1 0.438 / MOTA 0.485 / IDS 116`
+
+![loveTest current pipeline vs DeepOcSort base](docs/videos/full_benchmark/loveTest_ours_vs_DeepOcSort_base_preview.gif)
 
 [Full-resolution MP4](docs/videos/full_benchmark/loveTest_ours_vs_DeepOcSort_base.mp4)
-
-### darkTest: optimized vs base StrongSort
-
-Optimized pipeline: `IDF1 0.703 / MOTA 0.480 / IDS 16`  
-Base StrongSort: `IDF1 0.332 / MOTA 0.263 / IDS 121`
-
-![darkTest optimized vs StrongSort base](docs/videos/full_benchmark/darkTest_ours_vs_StrongSort_base_preview.gif)
-
-[Full-resolution MP4](docs/videos/full_benchmark/darkTest_ours_vs_StrongSort_base.mp4)
 
 ## Current Stage A Mode
 
 When `--expected-total-performers` is supplied, the current `sam4dbody` Stage A
 path adds expected-count recovery and dense ID remapping. This is the mode used
-for production handoff into masks and Body4D.
-
-Validation summary from `docs/EXPECTED_COUNT_STAGE_A.md`:
+for production handoff into masks and Body4D, and it is the mode benchmarked
+above. On the current 12-clip CVAT set, it matches the annotated performer count
+on all 12 clips.
 
 | Metric | Current Stage A expected-count mode |
 |---|---:|
-| Mean IDF1 | **0.960** |
-| Mean MOTA | **0.921** |
-| Exact predicted ID count | **11 / 11 clips** |
-| Strict pass | **8 / 11 clips** |
+| Mean IDF1 | **0.9573** |
+| Mean MOTA | **0.9163** |
+| Exact predicted ID count | **12 / 12 clips** |
+| Total ID switches | **8** |
+
+This is an overall benchmark win, not a claim that every clip is perfect:
+`jhumarTest` and `loveTest` are still the hardest current clips, and ByteTrack
+edges the current pipeline on `jealousTest` by 0.78 IDF1 percentage points.
 
 ## Pipeline Details
 

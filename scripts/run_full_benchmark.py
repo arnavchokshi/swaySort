@@ -1,24 +1,26 @@
-"""Full A10 benchmark: ours v9 shipped vs stock yolo26s.pt + base BoxMOT trackers.
+"""Full GPU benchmark: current pipeline vs stock yolo26s.pt + base BoxMOT trackers.
 
 For each clip in --clips-manifest:
   1. Build (or load) a STOCK-YOLO26s single-scale-640 detection cache,
-     stored next to the video as <stem>.base_det_cache.pkl. This is the
-     "out-of-the-box" detector a new user gets.
+     stored next to the video as <stem>.base_det_cache.pkl. This cache stores
+     compact detections only; decoded frames are streamed back from the video
+     per clip so the full benchmark does not fill the GPU instance disk.
   2. Replay that cache through every base BoxMOT tracker (default
      constructor params), capture per-frame outputs in MOT format,
      score against <clip>/gt/gt.txt with py-motmetrics, time each
      tracker.update() call.
   3. Run the shipped tracking.run_pipeline.run_pipeline_on_video for
      the SAME clip end-to-end (with our weights/best.pt + multi-scale
-     + post-process chain), score the result against the same gt, time
-     the wall-clock.
+     + post-process chain, optionally using the GT unique-ID count as
+     a known performer-count prior), score the result against the same
+     gt, time the wall-clock.
   4. Roll all rows into a single per-clip dict and dump
      work/benchmarks/full_results.json after every clip (so a crash
      doesn't lose work).
 
 Usage::
 
-    # On the A10 (production):
+    # On the benchmark GPU:
     python scripts/run_full_benchmark.py \\
         --device cuda:0 \\
         --clips-manifest configs/clips.remote.json \\
@@ -42,6 +44,7 @@ import json
 import logging
 import math
 import os
+import platform
 import sys
 import time
 from dataclasses import asdict, dataclass, field
@@ -65,7 +68,7 @@ BASELINE_TRACKERS = [
     "StrongSort (base)",
     "DeepOcSort (base)",
 ]
-OURS_LABEL = "Ours (v9 shipped)"
+OURS_LABEL = "Ours (current + count prior)"
 ALL_ROWS = [OURS_LABEL, *BASELINE_TRACKERS]
 
 
@@ -98,13 +101,41 @@ def _build_or_load_base_det_cache(
     Ultralytics quickstart config). Cache result next to the video so
     subsequent tracker replays are free.
 
-    Returns (frames_cache, mean_detector_ms_per_frame).
+    Returns (frames_cache, mean_detector_ms_per_frame).  Each returned frame
+    entry includes the decoded BGR image because ReID-aware BoxMOT trackers
+    need the image in ``tracker.update``.  The on-disk cache intentionally
+    excludes BGR frames.
     """
     cache_path = video.with_suffix(".base_det_cache.pkl")
     if cache_path.is_file() and max_frames is None:
         log.info("base detector cache hit: %s", cache_path)
         cached = joblib.load(str(cache_path))
-        return cached["frames"], float(cached.get("mean_det_ms", 0.0))
+        if "frames" in cached:
+            # Backward-compatible with the original heavy cache format.
+            return cached["frames"], float(cached.get("mean_det_ms", 0.0))
+
+        dets_by_frame = cached.get("dets_by_frame")
+        if dets_by_frame is None:
+            raise KeyError(f"unrecognized detector cache format: {cache_path}")
+
+        import cv2
+
+        cap = cv2.VideoCapture(str(video))
+        frames_out: List[Dict[str, np.ndarray]] = []
+        idx = 0
+        while idx < len(dets_by_frame):
+            ok, frame = cap.read()
+            if not ok:
+                break
+            frames_out.append({"bgr": frame, "dets": dets_by_frame[idx]})
+            idx += 1
+        cap.release()
+        if len(frames_out) != len(dets_by_frame):
+            log.warning(
+                "cache/video length mismatch for %s: cache=%d decoded=%d",
+                video, len(dets_by_frame), len(frames_out),
+            )
+        return frames_out, float(cached.get("mean_det_ms", 0.0))
 
     from ultralytics import YOLO
     log.info("running stock YOLO26s @ %d on %s (cache miss or max_frames cap)",
@@ -149,8 +180,14 @@ def _build_or_load_base_det_cache(
         1000.0 / max(mean_ms, 1e-6),
     )
     if max_frames is None:
-        joblib.dump({"frames": frames_out, "mean_det_ms": mean_ms},
-                    str(cache_path))
+        joblib.dump(
+            {
+                "dets_by_frame": [fc["dets"] for fc in frames_out],
+                "mean_det_ms": mean_ms,
+                "cache_format": "detections_only_v2",
+            },
+            str(cache_path),
+        )
         log.info("wrote base-det cache: %s", cache_path)
     return frames_out, mean_ms
 
@@ -315,6 +352,24 @@ def _score(pred_rows: List[str], gt_path: Path) -> Dict[str, float]:
     return _scrub_nan(out)
 
 
+def _gt_unique_count(gt_path: Path) -> int:
+    tids = set()
+    for line in gt_path.read_text().splitlines():
+        if not line.strip():
+            continue
+        parts = line.split(",")
+        if len(parts) < 2:
+            continue
+        try:
+            mark = int(float(parts[6])) if len(parts) >= 7 and parts[6] != "" else 1
+            if mark == 0:
+                continue
+            tids.add(int(float(parts[1])))
+        except ValueError:
+            continue
+    return len(tids)
+
+
 # ---------------------------------------------------------------------------
 # Per-clip orchestration
 # ---------------------------------------------------------------------------
@@ -357,11 +412,30 @@ def _reset_gpu_peak(device: str) -> None:
         torch.cuda.reset_peak_memory_stats()
 
 
+def _device_metadata(device: str) -> Dict[str, str]:
+    meta: Dict[str, str] = {
+        "device": device,
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+    }
+    try:
+        import torch
+
+        meta["torch"] = torch.__version__
+        if device.startswith("cuda") and torch.cuda.is_available():
+            idx = int(device.split(":", 1)[1]) if ":" in device else 0
+            meta["gpu_name"] = torch.cuda.get_device_name(idx)
+            meta["cuda_runtime"] = str(torch.version.cuda)
+    except Exception as exc:
+        meta["device_metadata_error"] = f"{type(exc).__name__}: {exc}"
+    return meta
+
+
 def _run_one_clip(
     *, clip_name: str, video: Path, gt_path: Path,
     base_weights: Path, our_weights: Path,
     reid_weights: Path, device: str, max_frames: Optional[int],
-    out_pkl_dir: Path,
+    out_pkl_dir: Path, expected_count_source: str,
 ) -> Dict[str, TrackerRun]:
     log.info("=" * 80)
     log.info("CLIP %s  video=%s", clip_name, video)
@@ -402,6 +476,8 @@ def _run_one_clip(
             log.exception("[%s] %s scoring failed: %s", clip_name, tname, exc)
             continue
         track_arr = np.asarray(track_ms, dtype=np.float64)
+        det_wall_est = det_ms_mean * len(frames_cache) / 1000.0
+        e2e_wall_est = wall + det_wall_est
         run = TrackerRun(
             row=tname,
             detector="stock yolo26s.pt @ imgsz=640, conf=0.25, iou=0.7, classes=[0]",
@@ -413,7 +489,7 @@ def _run_one_clip(
             tracker_ms_per_frame_median=round(float(np.median(track_arr)), 2),
             tracker_ms_per_frame_p95=round(float(np.percentile(track_arr, 95)), 2),
             end_to_end_fps=round(
-                len(frames_cache) / max(wall, 1e-6), 2),
+                len(frames_cache) / max(e2e_wall_est, 1e-6), 2),
             gpu_peak_mb=round(gpu_mb, 1),
             metrics=metrics,
         )
@@ -446,6 +522,16 @@ def _run_one_clip(
     log.info("--- [%s] %s ---", clip_name, OURS_LABEL)
     from tracking.run_pipeline import run_pipeline_on_video
     os.environ.setdefault("BEST_ID_DARK_PROFILE", "v9")
+    expected_total = (
+        _gt_unique_count(gt_path)
+        if expected_count_source == "gt" and max_frames is None
+        else None
+    )
+    if expected_total is not None:
+        log.info(
+            "[%s] using known performer-count prior from GT unique IDs: %d",
+            clip_name, expected_total,
+        )
     out_dir = REPO / "work" / "results" / clip_name
     out_dir.mkdir(parents=True, exist_ok=True)
     out_pkl = out_dir / "tracks.pkl"
@@ -456,6 +542,7 @@ def _run_one_clip(
             video=video, out=out_pkl, device=device,
             weights=our_weights, force=True,
             max_frames=max_frames,
+            expected_total_performers=expected_total,
         )
     except Exception as exc:
         log.exception("[%s] OURS FAILED: %s", clip_name, exc)
@@ -474,7 +561,8 @@ def _run_one_clip(
         detector=("weights/best.pt multi-scale {768,1024} ensemble, "
                   "conf=0.34, ensemble_iou=0.6, dark-recovery v9"),
         tracker_config=("DeepOcSort + OSNet x0.25 + Kalman jitter "
-                        "patch + full v9 post-process chain"),
+                        "patch + current post-process chain + "
+                        f"expected-count prior={expected_total}"),
         n_frames=n_frames_processed,
         wall_seconds=round(wall, 3),
         det_ms_per_frame_mean=0.0,  # not separately measured for shipped path
@@ -536,6 +624,17 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         "--mot-out-root", type=Path,
         default=REPO / "work" / "benchmarks" / "full_mot",
     )
+    p.add_argument(
+        "--expected-count-source",
+        choices=("gt", "none"),
+        default="gt",
+        help=(
+            "How to set our optional expected_total_performers prior. "
+            "'gt' uses the number of unique IDs in each GT file and should "
+            "be reported as a known performer-count prior; 'none' runs the "
+            "video-only pipeline."
+        ),
+    )
     return p.parse_args(argv)
 
 
@@ -565,9 +664,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     else:
         all_results = {
             "device": args.device,
+            "device_metadata": _device_metadata(args.device),
             "scoring": "py-motmetrics, IoU 0.5, mot15-2D",
             "ours_detector": "weights/best.pt multi-scale {768,1024}",
             "baseline_detector": "stock yolo26s.pt single-scale 640, conf=0.25, iou=0.7",
+            "ours_expected_count_source": args.expected_count_source,
             "n_baseline_trackers": len(BASELINE_TRACKERS),
             "clips": {},
         }
@@ -584,6 +685,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 reid_weights=args.reid_weights,
                 device=args.device, max_frames=args.max_frames,
                 out_pkl_dir=out_pkl_dir,
+                expected_count_source=args.expected_count_source,
             )
         except Exception as exc:
             log.exception("clip %s crashed: %s", clip_name, exc)

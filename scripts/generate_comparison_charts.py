@@ -7,19 +7,19 @@ Two chart families live here:
    ``work/benchmarks/per_clip_idf1.json`` and ``work/benchmarks/tracker_speeds.json``
    produced on macOS / MPS.
 
-2. **Full A10 benchmark charts** (``docs/figures/full_benchmark/*.png``)
+2. **Full GPU benchmark charts** (``docs/figures/full_benchmark/*.png``)
    -- the headline visuals in the new README. Driven by
    ``work/benchmarks/full_a10_results.json`` produced by
-   ``scripts/run_full_benchmark.py`` on the A10. Charts:
+   ``scripts/run_full_benchmark.py`` on the benchmark GPU. Charts:
 
-     - ``idf1_overall.png``           mean IDF1 across 9 clips, ours
+     - ``idf1_overall.png``           mean IDF1 across all benchmark clips, ours
                                       vs each base BoxMOT tracker
-     - ``per_clip_idf1.png``          grouped IDF1 per clip (9 x 7)
+     - ``per_clip_idf1.png``          grouped IDF1 per clip
      - ``id_switches_per_clip.png``   IDS per clip (lower = better)
      - ``fn_per_clip.png``            num_misses (false negatives) per clip
      - ``fp_per_clip.png``            num_false_positives per clip
-     - ``speed_vs_accuracy_a10.png``  e2e FPS vs IDF1 on A10
-     - ``mota_overall.png``           mean MOTA across 9 clips
+     - ``speed_vs_accuracy_a10.png``  e2e FPS vs IDF1 on the benchmark GPU
+     - ``mota_overall.png``           mean MOTA across all benchmark clips
      - ``a10_summary_table.md``       Markdown summary table for README
 
 Mermaid versions of the headline charts are also written to
@@ -602,12 +602,13 @@ def write_mermaid_snippets(out_path: Path,
 
 
 # ---------------------------------------------------------------------------
-# Full A10 benchmark charts (headline visuals for the new README)
+# Full GPU benchmark charts (headline visuals for the README)
 # ---------------------------------------------------------------------------
 
-# Canonical short labels for the 7 rows in the full A10 benchmark.
+# Canonical short labels for the 7 rows in the full benchmark.
 A10_LABELS: Dict[str, str] = {
-    "Ours (v9 shipped)":       "Ours (v9)",
+    "Ours (current + count prior)": "Ours + count prior",
+    "Ours (v9 shipped)":       "Ours + count prior",
     "ByteTrack (base)":        "ByteTrack",
     "OcSort (base, no ReID)":  "OcSort",
     "HybridSort (base)":       "HybridSort",
@@ -620,7 +621,7 @@ A10_LABELS: Dict[str, str] = {
 # (most-cited baseline), then ReID-aware (lighter), then ReID-aware
 # (heavier), then motion-only.
 A10_ORDER: List[str] = [
-    "Ours (v9)",
+    "Ours + count prior",
     "ByteTrack",
     "OcSort",
     "DeepOcSort",
@@ -630,7 +631,7 @@ A10_ORDER: List[str] = [
 ]
 
 A10_PALETTE: Dict[str, str] = {
-    "Ours (v9)":   OURS_COLOR,
+    "Ours + count prior":   OURS_COLOR,
     "ByteTrack":   "#EF6C00",
     "OcSort":      "#D84315",
     "DeepOcSort":  "#1E88E5",
@@ -645,6 +646,15 @@ def _load_full_results(path: Path) -> Optional[Dict]:
         log.warning("full results JSON missing: %s", path)
         return None
     return json.loads(path.read_text())
+
+
+def _hardware_label(payload: Dict) -> str:
+    meta = payload.get("device_metadata") or {}
+    gpu = meta.get("gpu_name")
+    if gpu:
+        return str(gpu).replace("NVIDIA ", "")
+    device = payload.get("device")
+    return str(device) if device else "GPU"
 
 
 def _per_clip_metric(
@@ -685,17 +695,18 @@ def _mean_per_tracker(
 
 
 def chart_a10_idf1_overall(out_path: Path, full_json: Path) -> None:
-    """Mean IDF1 across all 9 clips, ours highlighted, sorted desc."""
+    """Mean IDF1 across all benchmark clips, ours highlighted, sorted desc."""
     payload = _load_full_results(full_json)
     if payload is None:
         return
+    hardware = _hardware_label(payload)
     clip_names, per_clip = _per_clip_metric(payload, "idf1")
     means = _mean_per_tracker(per_clip)
     means.sort(key=lambda x: x[1], reverse=True)
 
     names = [n for n, _ in means]
     vals = [v for _, v in means]
-    colors = [A10_PALETTE[n] if n != "Ours (v9)" else OURS_COLOR
+    colors = [A10_PALETTE[n] if n != "Ours + count prior" else OURS_COLOR
               for n in names]
 
     fig, ax = plt.subplots(figsize=(9, 5.0))
@@ -714,9 +725,9 @@ def chart_a10_idf1_overall(out_path: Path, full_json: Path) -> None:
         fontsize=10,
     )
     ax.set_title(
-        "Tracker accuracy on the same hardware -- A10 GPU, py-motmetrics @ IoU 0.5\n"
+        f"Tracker accuracy on the same hardware -- {hardware}, py-motmetrics @ IoU 0.5\n"
         "Baselines: stock yolo26s.pt @ 640 + default BoxMOT params. "
-        "Ours: best.pt multi-scale + v9 post-process.",
+        "Ours: best.pt multi-scale + current post-process + count prior.",
         fontsize=10,
     )
     ax.spines[["top", "right"]].set_visible(False)
@@ -728,11 +739,11 @@ def chart_a10_idf1_overall(out_path: Path, full_json: Path) -> None:
         ax.text(v + (hi - lo) * 0.005, bar.get_y() + bar.get_height() / 2,
                 f"{v:.4f}", va="center", ha="left",
                 fontsize=9,
-                fontweight="bold" if n == "Ours (v9)" else "normal",
-                color="#1B5E20" if n == "Ours (v9)" else "#37474F")
+                fontweight="bold" if n == "Ours + count prior" else "normal",
+                color="#1B5E20" if n == "Ours + count prior" else "#37474F")
 
-    ours_v = next((v for n, v in means if n == "Ours (v9)"), float("nan"))
-    runner_up = next((v for n, v in means if n != "Ours (v9)"), float("nan"))
+    ours_v = next((v for n, v in means if n == "Ours + count prior"), float("nan"))
+    runner_up = next((v for n, v in means if n != "Ours + count prior"), float("nan"))
     worst = means[-1][1]
     if np.isfinite(ours_v) and np.isfinite(runner_up):
         delta_top = ours_v - runner_up
@@ -751,17 +762,18 @@ def chart_a10_idf1_overall(out_path: Path, full_json: Path) -> None:
 
 
 def chart_a10_mota_overall(out_path: Path, full_json: Path) -> None:
-    """Mean MOTA across all 9 clips."""
+    """Mean MOTA across all benchmark clips."""
     payload = _load_full_results(full_json)
     if payload is None:
         return
-    _, per_clip = _per_clip_metric(payload, "mota")
+    hardware = _hardware_label(payload)
+    clip_names, per_clip = _per_clip_metric(payload, "mota")
     means = _mean_per_tracker(per_clip)
     means.sort(key=lambda x: x[1], reverse=True)
 
     names = [n for n, _ in means]
     vals = [v for _, v in means]
-    colors = [A10_PALETTE[n] if n != "Ours (v9)" else OURS_COLOR
+    colors = [A10_PALETTE[n] if n != "Ours + count prior" else OURS_COLOR
               for n in names]
 
     fig, ax = plt.subplots(figsize=(9, 5.0))
@@ -776,11 +788,11 @@ def chart_a10_mota_overall(out_path: Path, full_json: Path) -> None:
     hi = min(1.05, (max(finite) if finite else 1) + 0.04)
     ax.set_xlim(lo, hi)
     ax.set_xlabel(
-        "Mean MOTA across 9 clips (higher = better; "
+        f"Mean MOTA across {len(clip_names)} clips (higher = better; "
         "penalises FP, FN, and ID switches)",
         fontsize=10,
     )
-    ax.set_title("Tracker MOTA on A10 -- 9-clip mean", fontsize=11)
+    ax.set_title(f"Tracker MOTA on {hardware}", fontsize=11)
     ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="x", linestyle=":", alpha=0.5)
 
@@ -790,8 +802,8 @@ def chart_a10_mota_overall(out_path: Path, full_json: Path) -> None:
         ax.text(v + (hi - lo) * 0.005, bar.get_y() + bar.get_height() / 2,
                 f"{v:.4f}", va="center", ha="left",
                 fontsize=9,
-                fontweight="bold" if n == "Ours (v9)" else "normal",
-                color="#1B5E20" if n == "Ours (v9)" else "#37474F")
+                fontweight="bold" if n == "Ours + count prior" else "normal",
+                color="#1B5E20" if n == "Ours + count prior" else "#37474F")
     _save_fig(fig, out_path)
     plt.close(fig)
 
@@ -826,9 +838,9 @@ def _grouped_per_clip_chart(
         x = centers - 0.425 + (ti + 0.5) * bar_w
         vals = per_clip[lbl]
         finite_vals = [v if np.isfinite(v) else 0.0 for v in vals]
-        color = A10_PALETTE[lbl] if lbl != "Ours (v9)" else OURS_COLOR
-        edge = "#1B5E20" if lbl == "Ours (v9)" else "white"
-        lw = 1.2 if lbl == "Ours (v9)" else 0.4
+        color = A10_PALETTE[lbl] if lbl != "Ours + count prior" else OURS_COLOR
+        edge = "#1B5E20" if lbl == "Ours + count prior" else "white"
+        lw = 1.2 if lbl == "Ours + count prior" else 0.4
         bar = ax.bar(x, finite_vals, bar_w, color=color,
                      edgecolor=edge, linewidth=lw, label=lbl)
         if lbl not in labels:
@@ -847,12 +859,12 @@ def _grouped_per_clip_chart(
               ncol=n_trackers, frameon=False, fontsize=8.5)
 
     # Per-clip annotation: how much ours wins/loses by.
-    ours_vals = per_clip["Ours (v9)"]
+    ours_vals = per_clip["Ours + count prior"]
     for ci, clip in enumerate(clip_names):
         ours_v = ours_vals[ci]
         if not np.isfinite(ours_v):
             continue
-        comp = [per_clip[lbl][ci] for lbl in A10_ORDER if lbl != "Ours (v9)"]
+        comp = [per_clip[lbl][ci] for lbl in A10_ORDER if lbl != "Ours + count prior"]
         comp = [v for v in comp if np.isfinite(v)]
         if not comp:
             continue
@@ -881,7 +893,7 @@ def _grouped_per_clip_chart(
 def chart_a10_per_clip_idf1(out_path: Path, full_json: Path) -> None:
     _grouped_per_clip_chart(
         out_path, full_json, "idf1",
-        title="Per-clip IDF1 -- A10 GPU, all 7 trackers vs ours\n"
+        title="Per-clip IDF1 -- all baseline trackers vs ours\n"
               "Annotation: pp lead of ours over the worst baseline on each clip",
         ylabel="IDF1 (higher = better)",
         higher_is_better=True,
@@ -891,7 +903,7 @@ def chart_a10_per_clip_idf1(out_path: Path, full_json: Path) -> None:
 def chart_a10_per_clip_mota(out_path: Path, full_json: Path) -> None:
     _grouped_per_clip_chart(
         out_path, full_json, "mota",
-        title="Per-clip MOTA -- A10 GPU, all 7 trackers vs ours",
+        title="Per-clip MOTA -- all baseline trackers vs ours",
         ylabel="MOTA (higher = better)",
         higher_is_better=True,
     )
@@ -928,10 +940,11 @@ def chart_a10_fp(out_path: Path, full_json: Path) -> None:
 
 
 def chart_a10_speed_vs_accuracy(out_path: Path, full_json: Path) -> None:
-    """Apples-to-apples scatter: A10 wall-clock FPS vs mean IDF1."""
+    """Apples-to-apples scatter: GPU wall-clock FPS vs mean IDF1."""
     payload = _load_full_results(full_json)
     if payload is None:
         return
+    hardware = _hardware_label(payload)
     clip_names, per_clip_idf1 = _per_clip_metric(payload, "idf1")
 
     fps_per_tracker: Dict[str, List[float]] = {lbl: [] for lbl in A10_ORDER}
@@ -964,29 +977,29 @@ def chart_a10_speed_vs_accuracy(out_path: Path, full_json: Path) -> None:
 
     fig, ax = plt.subplots(figsize=(10, 5.7))
     for name, fps, idf1 in points:
-        c = OURS_COLOR if name == "Ours (v9)" else A10_PALETTE[name]
-        size = 320 if name == "Ours (v9)" else 170
+        c = OURS_COLOR if name == "Ours + count prior" else A10_PALETTE[name]
+        size = 320 if name == "Ours + count prior" else 170
         ax.scatter(fps, idf1, s=size, color=c,
                    edgecolor="white", linewidth=1.5,
-                   zorder=3 if name == "Ours (v9)" else 2)
+                   zorder=3 if name == "Ours + count prior" else 2)
         ax.text(fps, idf1 + 0.01, name,
-                fontsize=10 if name == "Ours (v9)" else 9,
-                fontweight="bold" if name == "Ours (v9)" else "normal",
-                color="#1B5E20" if name == "Ours (v9)" else "#263238",
+                fontsize=10 if name == "Ours + count prior" else 9,
+                fontweight="bold" if name == "Ours + count prior" else "normal",
+                color="#1B5E20" if name == "Ours + count prior" else "#263238",
                 ha="center", va="bottom")
 
     ax.set_xlabel(
-        f"Mean end-to-end FPS on A10 GPU "
+        f"Mean end-to-end FPS on {hardware} "
         f"(across {len(clip_names)} clips, includes detection + tracking + "
         "post-process)",
         fontsize=10,
     )
     ax.set_ylabel(
-        f"Mean IDF1 across {len(clip_names)} clips (A10, py-motmetrics IoU 0.5)",
+        f"Mean IDF1 across {len(clip_names)} clips (py-motmetrics IoU 0.5)",
         fontsize=10,
     )
     ax.set_title(
-        "Speed vs accuracy on a single A10 GPU -- nothing in the field "
+        f"Speed vs accuracy on {hardware} -- nothing in the field "
         "dominates ours",
         fontsize=10,
     )
@@ -1063,7 +1076,7 @@ def write_a10_summary_table(out_path: Path, full_json: Path) -> None:
     )
     for r in rows:
         lbl, idf1, mota, ids, fn, fp, fps, gpu = r
-        marker = "**" if lbl == "Ours (v9)" else ""
+        marker = "**" if lbl == "Ours + count prior" else ""
         idf1_s = f"{idf1:.4f}" if np.isfinite(idf1) else "--"
         mota_s = f"{mota:.4f}" if np.isfinite(mota) else "--"
         fps_s = f"{fps:.2f}" if np.isfinite(fps) else "--"
@@ -1085,6 +1098,7 @@ def write_a10_mermaid_snippets(out_path: Path, full_json: Path) -> None:
     payload = _load_full_results(full_json)
     if payload is None:
         return
+    hardware = _hardware_label(payload)
     clip_names, per_clip_idf1 = _per_clip_metric(payload, "idf1")
     means = _mean_per_tracker(per_clip_idf1)
     means.sort(key=lambda x: x[1], reverse=True)
@@ -1108,10 +1122,10 @@ def write_a10_mermaid_snippets(out_path: Path, full_json: Path) -> None:
     fps_means.sort(key=lambda x: x[1], reverse=True)
 
     lines: List[str] = []
-    lines.append("# Mermaid snippets for full A10 benchmark "
+    lines.append("# Mermaid snippets for full GPU benchmark "
                  "(paste into README)\n")
 
-    lines.append("## Mean IDF1 across 9 clips (A10 GPU)\n")
+    lines.append(f"## Mean IDF1 across {len(clip_names)} clips ({hardware})\n")
     lines.append("```mermaid")
     lines.append("---")
     lines.append("config:")
@@ -1120,8 +1134,8 @@ def write_a10_mermaid_snippets(out_path: Path, full_json: Path) -> None:
     lines.append("    height: 400")
     lines.append("---")
     lines.append("xychart-beta")
-    lines.append('  title "Mean IDF1 across 9 clips (A10 GPU, '
-                 'higher = better)"')
+    lines.append(f'  title "Mean IDF1 across {len(clip_names)} clips '
+                 f'({hardware}, higher = better)"')
     finite_means = [v for _, v in means if np.isfinite(v)]
     lo = max(0.0, min(finite_means) - 0.05) if finite_means else 0.0
     hi = min(1.0, max(finite_means) + 0.04) if finite_means else 1.0
@@ -1133,7 +1147,7 @@ def write_a10_mermaid_snippets(out_path: Path, full_json: Path) -> None:
         for _, v in means) + "]")
     lines.append("```\n")
 
-    lines.append("## Mean end-to-end FPS across 9 clips (A10 GPU)\n")
+    lines.append(f"## Mean end-to-end FPS across {len(clip_names)} clips ({hardware})\n")
     lines.append("```mermaid")
     lines.append("---")
     lines.append("config:")
@@ -1142,7 +1156,7 @@ def write_a10_mermaid_snippets(out_path: Path, full_json: Path) -> None:
     lines.append("    height: 400")
     lines.append("---")
     lines.append("xychart-beta")
-    lines.append('  title "Mean end-to-end FPS across 9 clips (A10 GPU)"')
+    lines.append(f'  title "Mean end-to-end FPS across {len(clip_names)} clips ({hardware})"')
     lines.append("  x-axis [" + ", ".join(
         '"' + n + '"' for n, _ in fps_means) + "]")
     finite_fps = [v for _, v in fps_means if np.isfinite(v)]
@@ -1174,7 +1188,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument(
         "--full-results-json", type=Path,
         default=REPO / "work" / "benchmarks" / "full_a10_results.json",
-        help="JSON written by scripts/run_full_benchmark.py on the A10. "
+        help="JSON written by scripts/run_full_benchmark.py on the benchmark GPU. "
              "Drives the headline charts at the top of README.",
     )
     p.add_argument("--out-dir", type=Path,
@@ -1184,7 +1198,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                    help="Where to write the new full-benchmark charts.")
     p.add_argument(
         "--skip-legacy", action="store_true",
-        help="Skip the v8-era legacy charts (only render full A10 charts).",
+        help="Skip the v8-era legacy charts (only render full benchmark charts).",
     )
     args = p.parse_args(argv)
 
@@ -1216,7 +1230,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             args.speed_json if args.speed_json.is_file() else None,
         )
 
-    # Headline A10 charts (the new README leans on these)
+    # Headline full-benchmark charts.
     if args.full_results_json.is_file():
         args.full_out_dir.mkdir(parents=True, exist_ok=True)
         chart_a10_idf1_overall(
@@ -1261,7 +1275,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         )
     else:
         log.warning(
-            "full A10 results JSON missing -> skipping headline charts: %s",
+            "full benchmark results JSON missing -> skipping headline charts: %s",
             args.full_results_json,
         )
     return 0

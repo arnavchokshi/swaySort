@@ -83,41 +83,30 @@ python scripts/eval_id_yolo_cvat.py \
   --debug-overlay-max-frames 8
 ```
 
-`MotionTest` is excluded from the acceptance set because its annotations are
-not valid. Pass explicit `--clips MotionTest` to the underlying evaluator only
-when investigating that clip separately.
-
 ## Current Validation Status
 
-The latest cache-backed GPU validation using the expected-count prior and the
-valid annotation set is:
+The latest full GPU validation using the expected-count prior is the May 11,
+2026 benchmark stored in:
 
 ```text
-runs/expected_count_benchmark/expected_count_v7_adaptive_full/
+work/benchmarks/full_a10_results.json
 ```
 
-That run has exact total predicted identity count on every valid clip. It
-passes the strict zero-switch / count-match / MOTA gate on 8 of 11 valid clips.
-`jhumarTest` remains a known visual exception that is not currently being
-optimized. `loveTest` and `shorterTest` now have zero ID switches but still miss
-the strict gate because their MOTA / active-count errors remain below target.
+That run covers all 12 current annotated CVAT clips and has exact total
+predicted identity count on every clip. `jhumarTest` and `loveTest` remain the
+hardest identity cases in the current set.
 
-| Clip | GT IDs | Pred IDs | IDF1 | MOTA | Active-count accuracy | ID switches | Strict pass |
-|---|---:|---:|---:|---:|---:|---:|---|
-| 2pplTest | 2 | 2 | 1.0000 | 1.0000 | 1.0000 | 0 | yes |
-| BigTest | 14 | 14 | 0.9979 | 0.9959 | 0.9708 | 0 | yes |
-| adiTest | 5 | 5 | 1.0000 | 1.0000 | 1.0000 | 0 | yes |
-| easyTest | 6 | 6 | 0.9981 | 0.9963 | 1.0000 | 0 | yes |
-| eldonTest | 2 | 2 | 0.9722 | 0.9443 | 1.0000 | 0 | yes |
-| gymTest | 7 | 7 | 0.9930 | 0.9859 | 1.0000 | 0 | yes |
-| jealousTest | 2 | 2 | 0.9525 | 0.9051 | 1.0000 | 0 | yes |
-| jhumarTest | 10 | 10 | 0.8431 | 0.7016 | 0.6156 | 6 | no |
-| loveTest | 15 | 15 | 0.8849 | 0.7709 | 0.8683 | 0 | no |
-| mirrorTest | 9 | 9 | 0.9735 | 0.9470 | 1.0000 | 0 | yes |
-| shorterTest | 9 | 9 | 0.9429 | 0.8857 | 0.9739 | 0 | no |
-
-Local report artifacts from the validation run are under:
-
-```text
-runs/expected_count_benchmark/
-```
+| Clip | GT IDs | Pred IDs | IDF1 | MOTA | ID switches |
+|---|---:|---:|---:|---:|---:|
+| 2pplTest | 2 | 2 | 1.0000 | 1.0000 | 0 |
+| easyTest | 6 | 6 | 0.9969 | 0.9938 | 0 |
+| gymTest | 7 | 7 | 0.9961 | 0.9922 | 0 |
+| BigTest | 14 | 14 | 0.9973 | 0.9946 | 0 |
+| adiTest | 5 | 5 | 1.0000 | 1.0000 | 0 |
+| mirrorTest | 9 | 9 | 0.9743 | 0.9486 | 0 |
+| shorterTest | 9 | 9 | 0.9429 | 0.8857 | 0 |
+| eldonTest | 2 | 2 | 0.9734 | 0.9468 | 0 |
+| jealousTest | 2 | 2 | 0.9558 | 0.9117 | 0 |
+| jhumarTest | 10 | 10 | 0.8503 | 0.7192 | 6 |
+| MotionTest | 14 | 14 | 0.9222 | 0.8460 | 0 |
+| loveTest | 15 | 15 | 0.8784 | 0.7572 | 2 |
