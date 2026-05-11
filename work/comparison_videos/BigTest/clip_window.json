@@ -2,7 +2,7 @@
   "clip": "BigTest",
   "out": "work/comparison_videos/BigTest/BigTest_ours_vs_DeepOcSort_base.mp4",
   "frames_written": 300,
-  "wall_seconds": 2.73,
+  "wall_seconds": 3.25,
   "fps": 30.0,
   "start_frame": 180,
   "end_frame": 479,
@@ -10,6 +10,8 @@
     1920,
     640
   ],
+  "ours_window_id_changes": 0,
+  "baseline_window_id_changes": 50,
   "worst_baseline": "DeepOcSort (base)",
   "mean_gt_density": 11.4,
   "clip_window_seconds": 10.0

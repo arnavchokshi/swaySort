@@ -2,7 +2,7 @@
   "clip": "MotionTest",
   "out": "work/comparison_videos/MotionTest/MotionTest_ours_vs_DeepOcSort_base.mp4",
   "frames_written": 300,
-  "wall_seconds": 3.21,
+  "wall_seconds": 3.84,
   "fps": 29.99,
   "start_frame": 0,
   "end_frame": 299,
@@ -10,6 +10,8 @@
     1920,
     640
   ],
+  "ours_window_id_changes": 0,
+  "baseline_window_id_changes": 26,
   "worst_baseline": "DeepOcSort (base)",
   "mean_gt_density": 14.0,
   "clip_window_seconds": 10.0

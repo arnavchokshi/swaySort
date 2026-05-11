@@ -3,7 +3,7 @@
     "clip": "BigTest",
     "out": "work/comparison_videos/BigTest/BigTest_ours_vs_DeepOcSort_base.mp4",
     "frames_written": 300,
-    "wall_seconds": 2.73,
+    "wall_seconds": 3.25,
     "fps": 30.0,
     "start_frame": 180,
     "end_frame": 479,
@@ -11,6 +11,8 @@
       1920,
       640
     ],
+    "ours_window_id_changes": 0,
+    "baseline_window_id_changes": 50,
     "worst_baseline": "DeepOcSort (base)",
     "mean_gt_density": 11.4,
     "clip_window_seconds": 10.0
@@ -19,7 +21,7 @@
     "clip": "jhumarTest",
     "out": "work/comparison_videos/jhumarTest/jhumarTest_ours_vs_OcSort_base_no_ReID.mp4",
     "frames_written": 293,
-    "wall_seconds": 2.97,
+    "wall_seconds": 3.73,
     "fps": 29.343,
     "start_frame": 110,
     "end_frame": 402,
@@ -27,6 +29,8 @@
       1920,
       640
     ],
+    "ours_window_id_changes": 0,
+    "baseline_window_id_changes": 62,
     "worst_baseline": "OcSort (base, no ReID)",
     "mean_gt_density": 10.0,
     "clip_window_seconds": 9.99
@@ -35,7 +39,7 @@
     "clip": "MotionTest",
     "out": "work/comparison_videos/MotionTest/MotionTest_ours_vs_DeepOcSort_base.mp4",
     "frames_written": 300,
-    "wall_seconds": 3.21,
+    "wall_seconds": 3.84,
     "fps": 29.99,
     "start_frame": 0,
     "end_frame": 299,
@@ -43,24 +47,10 @@
       1920,
       640
     ],
+    "ours_window_id_changes": 0,
+    "baseline_window_id_changes": 26,
     "worst_baseline": "DeepOcSort (base)",
     "mean_gt_density": 14.0,
-    "clip_window_seconds": 10.0
-  },
-  {
-    "clip": "loveTest",
-    "out": "work/comparison_videos/loveTest/loveTest_ours_vs_DeepOcSort_base.mp4",
-    "frames_written": 299,
-    "wall_seconds": 2.89,
-    "fps": 29.914,
-    "start_frame": 0,
-    "end_frame": 298,
-    "out_resolution": [
-      1920,
-      640
-    ],
-    "worst_baseline": "DeepOcSort (base)",
-    "mean_gt_density": 15.0,
     "clip_window_seconds": 10.0
   }
 ]

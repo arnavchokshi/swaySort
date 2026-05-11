@@ -2,7 +2,7 @@
   "clip": "jhumarTest",
   "out": "work/comparison_videos/jhumarTest/jhumarTest_ours_vs_OcSort_base_no_ReID.mp4",
   "frames_written": 293,
-  "wall_seconds": 2.97,
+  "wall_seconds": 3.73,
   "fps": 29.343,
   "start_frame": 110,
   "end_frame": 402,
@@ -10,6 +10,8 @@
     1920,
     640
   ],
+  "ours_window_id_changes": 0,
+  "baseline_window_id_changes": 62,
   "worst_baseline": "OcSort (base, no ReID)",
   "mean_gt_density": 10.0,
   "clip_window_seconds": 9.99

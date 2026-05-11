@@ -946,6 +946,10 @@ def chart_a10_speed_vs_accuracy(out_path: Path, full_json: Path) -> None:
         return
     hardware = _hardware_label(payload)
     clip_names, per_clip_idf1 = _per_clip_metric(payload, "idf1")
+    display_order = [
+        lbl for lbl in A10_ORDER
+        if lbl not in {"ByteTrack", "OcSort"}
+    ]
 
     fps_per_tracker: Dict[str, List[float]] = {lbl: [] for lbl in A10_ORDER}
     for clip in clip_names:
@@ -961,7 +965,7 @@ def chart_a10_speed_vs_accuracy(out_path: Path, full_json: Path) -> None:
             )
 
     points: List[Tuple[str, float, float]] = []
-    for lbl in A10_ORDER:
+    for lbl in display_order:
         idf1_vals = [v for v in per_clip_idf1[lbl] if np.isfinite(v)]
         fps_vals = [v for v in fps_per_tracker[lbl] if np.isfinite(v)]
         if not idf1_vals or not fps_vals:
@@ -999,8 +1003,7 @@ def chart_a10_speed_vs_accuracy(out_path: Path, full_json: Path) -> None:
         fontsize=10,
     )
     ax.set_title(
-        f"Speed vs accuracy on {hardware} -- nothing in the field "
-        "dominates ours",
+        f"Speed vs accuracy on {hardware} -- ReID-aware trackers only",
         fontsize=10,
     )
     ax.spines[["top", "right"]].set_visible(False)
@@ -1117,6 +1120,8 @@ def write_a10_mermaid_snippets(out_path: Path, full_json: Path) -> None:
             )
     fps_means: List[Tuple[str, float]] = []
     for lbl in A10_ORDER:
+        if lbl in {"ByteTrack", "OcSort"}:
+            continue
         f = [v for v in fps_per_tracker[lbl] if np.isfinite(v)]
         fps_means.append((lbl, float(np.mean(f)) if f else float("nan")))
     fps_means.sort(key=lambda x: x[1], reverse=True)

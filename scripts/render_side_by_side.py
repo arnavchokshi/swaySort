@@ -145,6 +145,34 @@ def _gt_density_per_frame(gt_path: Path) -> Dict[int, int]:
     return out
 
 
+def _parse_gt_mot_file(path: Path) -> Dict[int, List[Tuple[int, np.ndarray]]]:
+    """Return {frame_idx (0-based): [(gt_id, xyxy), ...]} for GT boxes."""
+    out: Dict[int, List[Tuple[int, np.ndarray]]] = defaultdict(list)
+    if not path.is_file():
+        return out
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split(",")
+        if len(parts) < 6:
+            continue
+        try:
+            f = int(parts[0]) - 1
+            tid = int(parts[1])
+            x = float(parts[2]) - 1.0
+            y = float(parts[3]) - 1.0
+            w = float(parts[4])
+            h = float(parts[5])
+            conf = float(parts[6]) if len(parts) >= 7 else 1.0
+        except ValueError:
+            continue
+        if conf < 0.5:
+            continue
+        out[f].append((tid, np.array([x, y, x + w, y + h], dtype=np.float32)))
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Window picking + rendering
 # ---------------------------------------------------------------------------
@@ -174,6 +202,155 @@ def color_for_id(tid: int) -> Tuple[int, int, int]:
     h = (tid * 0.61803398875) % 1.0
     r, g, b = colorsys.hsv_to_rgb(h, 0.85, 1.0)
     return int(b * 255), int(g * 255), int(r * 255)
+
+
+def _bbox_iou(a: np.ndarray, b: np.ndarray) -> float:
+    x1 = max(float(a[0]), float(b[0]))
+    y1 = max(float(a[1]), float(b[1]))
+    x2 = min(float(a[2]), float(b[2]))
+    y2 = min(float(a[3]), float(b[3]))
+    iw = max(0.0, x2 - x1)
+    ih = max(0.0, y2 - y1)
+    inter = iw * ih
+    if inter <= 0:
+        return 0.0
+    area_a = max(0.0, float(a[2] - a[0])) * max(0.0, float(a[3] - a[1]))
+    area_b = max(0.0, float(b[2] - b[0])) * max(0.0, float(b[3] - b[1]))
+    denom = area_a + area_b - inter
+    return inter / denom if denom > 0 else 0.0
+
+
+def _match_gt_to_pred(
+    gt_items: List[Tuple[int, np.ndarray]],
+    pred_items: List[Tuple[int, np.ndarray]],
+    *,
+    iou_threshold: float = 0.5,
+) -> List[Tuple[int, int]]:
+    """Greedy one-to-one GT-to-prediction matches for ticker visualization."""
+    candidates: List[Tuple[float, int, int, int, int]] = []
+    for gi, (gt_id, gt_box) in enumerate(gt_items):
+        for pi, (pred_id, pred_box) in enumerate(pred_items):
+            iou = _bbox_iou(gt_box, pred_box)
+            if iou >= iou_threshold:
+                candidates.append((iou, gi, pi, gt_id, pred_id))
+    candidates.sort(reverse=True)
+
+    used_gt = set()
+    used_pred = set()
+    matches: List[Tuple[int, int]] = []
+    for _, gi, pi, gt_id, pred_id in candidates:
+        if gi in used_gt or pi in used_pred:
+            continue
+        used_gt.add(gi)
+        used_pred.add(pi)
+        matches.append((gt_id, pred_id))
+    return matches
+
+
+def _id_change_ticker(
+    gt_per_frame: Dict[int, List[Tuple[int, np.ndarray]]],
+    pred_per_frame: Dict[int, List[Tuple[int, np.ndarray]]],
+    *,
+    start_frame: int,
+    end_frame: int,
+) -> Tuple[Dict[int, int], Dict[int, int]]:
+    """Return cumulative ID-switch count and per-frame event count.
+
+    This mirrors py-motmetrics SWITCH events inside the rendered window, so the
+    visible ticker follows the same assignment semantics as the benchmark.
+    """
+    cumulative: Dict[int, int] = {}
+    events: Dict[int, int] = {}
+    try:
+        import motmetrics as mm
+
+        acc = mm.MOTAccumulator(auto_id=True)
+        frame_ids = list(range(start_frame, end_frame + 1))
+        for fi in frame_ids:
+            gt_items = gt_per_frame.get(fi, [])
+            pred_items = pred_per_frame.get(fi, [])
+            gt_ids = [tid for tid, _ in gt_items]
+            pred_ids = [tid for tid, _ in pred_items]
+            gt_boxes = (
+                np.stack([box for _, box in gt_items], axis=0)
+                if gt_items else np.empty((0, 4))
+            )
+            pred_boxes = (
+                np.stack([box for _, box in pred_items], axis=0)
+                if pred_items else np.empty((0, 4))
+            )
+            distances = mm.distances.iou_matrix(
+                gt_boxes, pred_boxes, max_iou=0.5)
+            acc.update(gt_ids, pred_ids, distances)
+
+        switch_counts_by_rel: Dict[int, int] = defaultdict(int)
+        events_df = acc.events.reset_index()
+        if not events_df.empty:
+            switches = events_df[events_df["Type"] == "SWITCH"]
+            for _, row in switches.iterrows():
+                switch_counts_by_rel[int(row["FrameId"])] += 1
+
+        total = 0
+        for rel, fi in enumerate(frame_ids):
+            frame_events = int(switch_counts_by_rel.get(rel, 0))
+            total += frame_events
+            cumulative[fi] = total
+            events[fi] = frame_events
+        return cumulative, events
+    except Exception as exc:
+        log.warning("falling back to greedy ID-change ticker: %s", exc)
+
+    last_pred_by_gt: Dict[int, int] = {}
+    total = 0
+    for fi in range(start_frame, end_frame + 1):
+        frame_events = 0
+        matches = _match_gt_to_pred(
+            gt_per_frame.get(fi, []),
+            pred_per_frame.get(fi, []),
+        )
+        for gt_id, pred_id in matches:
+            prev = last_pred_by_gt.get(gt_id)
+            if prev is not None and prev != pred_id:
+                total += 1
+                frame_events += 1
+            last_pred_by_gt[gt_id] = pred_id
+        cumulative[fi] = total
+        events[fi] = frame_events
+    return cumulative, events
+
+
+def _draw_id_change_ticker(
+    frame: np.ndarray,
+    *,
+    count: int,
+    frame_events: int,
+) -> None:
+    """Draw a high-visibility cumulative ID-change counter on a panel."""
+    h, w = frame.shape[:2]
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    label = f"ID CHANGES: {count}"
+    sub = f"+{frame_events} now" if frame_events else "no change"
+    scale = max(0.85, min(1.25, w / 850))
+    thick = max(2, int(round(scale * 2.4)))
+    (lw, lh), _ = cv2.getTextSize(label, font, scale, thick)
+    (sw, sh), _ = cv2.getTextSize(sub, font, scale * 0.58, max(1, thick - 1))
+    box_w = max(lw, sw) + 36
+    box_h = lh + sh + 34
+    x1 = 14
+    y2 = h - 14
+    y1 = max(0, y2 - box_h)
+    x2 = min(w - 14, x1 + box_w)
+
+    overlay = frame.copy()
+    fill = (15, 15, 15) if frame_events == 0 else (20, 20, 210)
+    cv2.rectangle(overlay, (x1, y1), (x2, y2), fill, -1)
+    cv2.addWeighted(overlay, 0.78, frame, 0.22, 0, frame)
+    stroke = (255, 255, 255) if frame_events == 0 else (255, 245, 120)
+    cv2.rectangle(frame, (x1, y1), (x2, y2), stroke, 2)
+    cv2.putText(frame, label, (x1 + 18, y1 + lh + 12), font, scale,
+                (255, 255, 255), thick, cv2.LINE_AA)
+    cv2.putText(frame, sub, (x1 + 18, y2 - 12), font, scale * 0.58,
+                (230, 230, 230), max(1, thick - 1), cv2.LINE_AA)
 
 
 def _draw_boxes(
@@ -232,6 +409,7 @@ def _draw_banner(
 def render_side_by_side(
     clip_name: str,
     video: Path,
+    gt_per_frame: Dict[int, List[Tuple[int, np.ndarray]]],
     ours_per_frame: Dict[int, List[Tuple[int, np.ndarray]]],
     base_per_frame: Dict[int, List[Tuple[int, np.ndarray]]],
     base_label: str,
@@ -286,6 +464,14 @@ def render_side_by_side(
         f"FN {int(base_metrics.get('num_misses', 0))}  "
         f"FP {int(base_metrics.get('num_false_positives', 0))}",
     ]
+    ours_ticker, ours_events = _id_change_ticker(
+        gt_per_frame, ours_per_frame,
+        start_frame=start_frame, end_frame=end_frame,
+    )
+    base_ticker, base_events = _id_change_ticker(
+        gt_per_frame, base_per_frame,
+        start_frame=start_frame, end_frame=end_frame,
+    )
 
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
     written = 0
@@ -302,6 +488,16 @@ def render_side_by_side(
 
         ours_frame = cv2.resize(ours_frame, (out_w_per_panel, out_h_panel))
         base_frame = cv2.resize(base_frame, (out_w_per_panel, out_h_panel))
+        _draw_id_change_ticker(
+            ours_frame,
+            count=ours_ticker.get(fi, 0),
+            frame_events=ours_events.get(fi, 0),
+        )
+        _draw_id_change_ticker(
+            base_frame,
+            count=base_ticker.get(fi, 0),
+            frame_events=base_events.get(fi, 0),
+        )
 
         ours_panel = _draw_banner(
             ours_frame,
@@ -346,6 +542,8 @@ def render_side_by_side(
         "start_frame": start_frame,
         "end_frame": end_frame,
         "out_resolution": [out_w, base_h],
+        "ours_window_id_changes": max(ours_ticker.values(), default=0),
+        "baseline_window_id_changes": max(base_ticker.values(), default=0),
     }
 
 
@@ -520,6 +718,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 log.info("[%s] Ours from benchmark MOT: %s",
                          clip_name, ours_source)
             base_pf = _parse_mot_file(baseline_mot)
+            gt_pf = _parse_gt_mot_file(gt_path)
             cap = cv2.VideoCapture(str(video_path))
             n_total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
@@ -540,6 +739,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             r = render_side_by_side(
                 clip_name=clip_name,
                 video=video_path,
+                gt_per_frame=gt_pf,
                 ours_per_frame=ours_pf,
                 base_per_frame=base_pf,
                 base_label=worst_name,

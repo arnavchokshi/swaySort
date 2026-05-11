@@ -27,7 +27,7 @@ config:
 ---
 xychart-beta
   title "Mean end-to-end FPS across 12 clips (A100 80GB PCIe)"
-  x-axis ["ByteTrack", "OcSort", "Ours + count prior", "BotSort", "DeepOcSort", "HybridSort", "StrongSort"]
-  y-axis "End-to-end FPS" 0 --> 103.7
-  bar [90.14, 89.54, 18.41, 18.25, 18.17, 14.16, 11.39]
+  x-axis ["Ours + count prior", "BotSort", "DeepOcSort", "HybridSort", "StrongSort"]
+  y-axis "End-to-end FPS" 0 --> 21.2
+  bar [18.41, 18.25, 18.17, 14.16, 11.39]
 ```

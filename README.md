@@ -59,7 +59,9 @@ across all 12 current clips; the next-best baseline has 85, and the worst has
 ## Visual Comparisons
 
 Bounding-box color is keyed by track ID. Stable color means stable identity;
-color flips mean an ID swap.
+color flips mean an ID swap. Each side also has a visible `ID CHANGES` ticker
+that increments when the benchmark matching detects an identity switch inside
+the displayed window.
 
 ### BigTest: current pipeline vs base DeepOcSort
 
@@ -68,8 +70,6 @@ Base DeepOcSort: `IDF1 0.323 / MOTA 0.376 / IDS 70`
 
 ![BigTest current pipeline vs DeepOcSort base](docs/videos/full_benchmark/BigTest_ours_vs_DeepOcSort_base_preview.gif)
 
-[Full-resolution MP4](docs/videos/full_benchmark/BigTest_ours_vs_DeepOcSort_base.mp4)
-
 ### jhumarTest: current pipeline vs base OcSort
 
 Current pipeline: `IDF1 0.850 / MOTA 0.719 / IDS 6`<br>
@@ -77,25 +77,12 @@ Base OcSort: `IDF1 0.296 / MOTA 0.376 / IDS 91`
 
 ![jhumarTest current pipeline vs OcSort base](docs/videos/full_benchmark/jhumarTest_ours_vs_OcSort_base_no_ReID_preview.gif)
 
-[Full-resolution MP4](docs/videos/full_benchmark/jhumarTest_ours_vs_OcSort_base_no_ReID.mp4)
-
 ### MotionTest: current pipeline vs base DeepOcSort
 
 Current pipeline: `IDF1 0.922 / MOTA 0.846 / IDS 0`<br>
 Base DeepOcSort: `IDF1 0.385 / MOTA 0.578 / IDS 143`
 
 ![MotionTest current pipeline vs DeepOcSort base](docs/videos/full_benchmark/MotionTest_ours_vs_DeepOcSort_base_preview.gif)
-
-[Full-resolution MP4](docs/videos/full_benchmark/MotionTest_ours_vs_DeepOcSort_base.mp4)
-
-### loveTest: current pipeline vs base DeepOcSort
-
-Current pipeline: `IDF1 0.878 / MOTA 0.757 / IDS 2`<br>
-Base DeepOcSort: `IDF1 0.438 / MOTA 0.485 / IDS 116`
-
-![loveTest current pipeline vs DeepOcSort base](docs/videos/full_benchmark/loveTest_ours_vs_DeepOcSort_base_preview.gif)
-
-[Full-resolution MP4](docs/videos/full_benchmark/loveTest_ours_vs_DeepOcSort_base.mp4)
 
 ## Current Stage A Mode
 
