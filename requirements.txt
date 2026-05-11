@@ -1,13 +1,13 @@
-# Production v8 best-pipeline dependencies.
+# Production Stage 1 ID/tracking dependencies.
 #
 # Targets Python 3.11 on macOS (mps), CUDA 12.x on NVIDIA, or CPU.
-# Versions are pinned to the exact releases the v8 numbers in the README
-# (and the work/benchmarks/ artifacts) were measured against -- if you
-# care about reproducing the same IDF1 / FPS, use these.
+# Versions are pinned for reproducible tracker/evaluator behavior. Torch and
+# torchvision stay out of this file because the right wheel depends on your
+# platform.
 #
 # torch / torchvision are NOT pinned in this file because the right
 # wheel depends on your platform (CUDA vs MPS vs CPU). Install them
-# FIRST, then `pip install -r requirements.txt`. See README "Quickstart".
+# FIRST, then `pip install -r requirements.txt`. See README "Install".
 
 # Detection + tracking
 ultralytics==8.4.37
@@ -18,7 +18,7 @@ filterpy==1.4.5
 
 # Numerics / vision
 numpy==1.26.4
-scipy==1.17.1
+scipy>=1.13,<1.14
 opencv-python==4.10.0.84
 
 # Pickling (cache + tracks.pkl)
@@ -27,12 +27,12 @@ joblib==1.5.3
 # Required by ultralytics + boxmot at runtime; pinned for reproducibility
 tqdm==4.67.3
 
-# Only needed to regenerate the README comparison charts via
+# Only needed to regenerate the historical comparison charts via
 # scripts/generate_comparison_charts.py. Safe to remove if you only
 # want to run the production pipeline.
 matplotlib==3.10.8
 
-# Only needed to score per-clip IDF1 vs your GT files via
-# scripts/eval_per_clip.py (and to reproduce work/benchmarks/per_clip_idf1.json).
+# Only needed to score IDF1/MOTA vs CVAT/MOT ground truth via
+# scripts/eval_id_yolo_cvat.py.
 # Safe to remove if you only want to run the production pipeline.
 motmetrics==1.4.0

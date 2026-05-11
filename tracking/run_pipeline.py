@@ -81,6 +81,34 @@ from tracking.postprocess import Track
 log = logging.getLogger("tracking.run_pipeline")
 
 
+def _timing_add(timing: Optional[dict], key: str, elapsed_s: float) -> None:
+    if timing is None:
+        return
+    timers = timing.setdefault("timers_s", {})
+    timers[key] = float(timers.get(key, 0.0)) + float(elapsed_s)
+
+
+def _timing_inc(timing: Optional[dict], key: str, n: int = 1) -> None:
+    if timing is None:
+        return
+    counts = timing.setdefault("counts", {})
+    counts[key] = int(counts.get(key, 0)) + int(n)
+
+
+def _write_timing_json(path: Path, timing: dict) -> None:
+    payload = dict(timing)
+    payload["timers_s"] = {
+        str(k): round(float(v), 6)
+        for k, v in sorted((payload.get("timers_s") or {}).items())
+    }
+    payload["counts"] = {
+        str(k): int(v)
+        for k, v in sorted((payload.get("counts") or {}).items())
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True))
+
+
 def _resolve_prefetch_depth() -> int:
     """Read BEST_ID_PREFETCH and return the queue depth (0 = sync)."""
     raw = os.environ.get("BEST_ID_PREFETCH", "").strip()
@@ -95,29 +123,37 @@ def _resolve_prefetch_depth() -> int:
 
 
 def _resolve_pipeline_parallel() -> bool:
-    """Read BEST_ID_PIPELINE_PARALLEL flag (truthy values: 1/true/yes/on)."""
+    """Read BEST_ID_PIPELINE_PARALLEL.
+
+    Default OFF: the H100 Phase 2 slice showed a speedup, but later
+    end-to-end reruns found no current wall-clock win and showed YOLO
+    detector and DeepOcSort/ReID timings stretching each other when they
+    shared one CUDA device. Keep the overlap path opt-in until it is
+    revalidated on the production image/hardware.
+    """
     raw = os.environ.get("BEST_ID_PIPELINE_PARALLEL", "").strip().lower()
+    if not raw:
+        return False
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    log.warning("BEST_ID_PIPELINE_PARALLEL=%r not recognized; defaulting to OFF", raw)
+    return False
+
+
+def _resolve_reid_half() -> bool:
+    raw = os.environ.get("BEST_ID_REID_HALF", "").strip().lower()
     return raw in {"1", "true", "yes", "on"}
 
 
-def _resolve_adaptive_anchor_stride() -> int:
-    """Read BEST_ID_ADAPTIVE_ANCHOR flag. 1=off, N>1=anchor stride."""
-    raw = os.environ.get("BEST_ID_ADAPTIVE_ANCHOR", "").strip()
-    if not raw:
-        return 1
-    try:
-        return max(1, int(raw))
-    except ValueError:
-        return 1
-
-
-def _frame_iter(video: Path) -> Iterator[Tuple[int, np.ndarray]]:
+def _frame_iter(video: Path, *, frame_stride: int = 1) -> Iterator[Tuple[int, np.ndarray]]:
     """Choose sync vs prefetched frame decoder based on env var."""
     depth = _resolve_prefetch_depth()
     if depth <= 0:
-        return iter_video_frames(video)
+        return iter_video_frames(video, frame_stride=frame_stride)
     log.info("frame prefetch enabled: queue_depth=%d", depth)
-    return iter_video_frames_prefetched(video, queue_size=depth)
+    return iter_video_frames_prefetched(video, queue_size=depth, frame_stride=frame_stride)
 
 
 # Production constants. Every value here was selected by sweeping
@@ -166,6 +202,40 @@ def _resolve_tta_flip() -> bool:
     return raw in {"1", "true", "yes", "on"}
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name, "").strip().lower()
+    if not raw:
+        return default
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    log.warning("%s=%r not recognized; using default %s", name, raw, default)
+    return default
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        log.warning("%s=%r not float; using default %.3f", name, raw, default)
+        return default
+
+
+def _env_int(name: str, default: int) -> int:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        log.warning("%s=%r not int; using default %d", name, raw, default)
+        return default
+
+
 DETECTOR_IMGSZ_ENSEMBLE = (768, 1024)
 DETECTOR_ENSEMBLE_IOU = 0.6
 DETECTOR_CONF = float(DET_CONF)  # 0.34, the plateau centre
@@ -197,6 +267,74 @@ def _record_tracker_output(
     out_frames.append(FrameDetections(xyxys, confs, tids))
 
 
+def _record_detector_output(out_frames: List[FrameDetections], detections: np.ndarray) -> None:
+    if detections.size == 0:
+        out_frames.append(FrameDetections(
+            np.empty((0, 4), dtype=np.float32),
+            np.empty((0,), dtype=np.float32),
+            np.empty((0,), dtype=np.float32),
+        ))
+        return
+    arr = np.asarray(detections, dtype=np.float32)
+    out_frames.append(FrameDetections(
+        arr[:, 0:4].astype(np.float32),
+        arr[:, 4].astype(np.float32) if arr.shape[1] > 4 else np.ones(len(arr), dtype=np.float32),
+        arr[:, 5].astype(np.float32) if arr.shape[1] > 5 else np.zeros(len(arr), dtype=np.float32),
+    ))
+
+
+def _box_area_xyxy(box: np.ndarray) -> float:
+    return max(0.0, float(box[2] - box[0])) * max(0.0, float(box[3] - box[1]))
+
+
+def _intersection_area_xyxy(a: np.ndarray, b: np.ndarray) -> float:
+    x1 = max(float(a[0]), float(b[0]))
+    y1 = max(float(a[1]), float(b[1]))
+    x2 = min(float(a[2]), float(b[2]))
+    y2 = min(float(a[3]), float(b[3]))
+    return max(0.0, x2 - x1) * max(0.0, y2 - y1)
+
+
+def _suppress_group_boxes_for_tracker(
+    dets: np.ndarray,
+    *,
+    timing: Optional[dict] = None,
+) -> np.ndarray:
+    """Drop oversized detections that contain multiple smaller people boxes.
+
+    This is an opt-in experiment for gym-style crowded choreography where YOLO
+    sometimes emits one high-confidence "group" box over adjacent dancers.  It
+    is intentionally conservative and disabled unless BEST_ID_GROUP_SUPPRESS=1.
+    """
+    if not _env_bool("BEST_ID_GROUP_SUPPRESS", False):
+        return dets
+    arr = np.asarray(dets, dtype=np.float32)
+    if arr.ndim != 2 or len(arr) < 3 or arr.shape[1] < 4:
+        return arr
+    cover = _env_float("BEST_ID_GROUP_SUPPRESS_COVER", 0.65)
+    area_ratio = _env_float("BEST_ID_GROUP_SUPPRESS_AREA_RATIO", 1.8)
+    min_children = max(1, _env_int("BEST_ID_GROUP_SUPPRESS_MIN_CHILDREN", 2))
+
+    boxes = arr[:, 0:4]
+    areas = np.asarray([_box_area_xyxy(b) for b in boxes], dtype=np.float64)
+    keep = np.ones((len(arr),), dtype=bool)
+    for i, box in enumerate(boxes):
+        children = 0
+        for j, other in enumerate(boxes):
+            if i == j:
+                continue
+            if areas[i] < areas[j] * area_ratio:
+                continue
+            if _intersection_area_xyxy(box, other) / max(1e-9, areas[j]) >= cover:
+                children += 1
+        if children >= min_children:
+            keep[i] = False
+    dropped = int(len(arr) - int(keep.sum()))
+    if dropped:
+        _timing_inc(timing, "tracker_group_boxes_suppressed", dropped)
+    return arr[keep]
+
+
 def _safe_detect(detect, frame_bgr: np.ndarray) -> np.ndarray:
     dets = detect(frame_bgr)
     if dets.size == 0:
@@ -204,113 +342,105 @@ def _safe_detect(detect, frame_bgr: np.ndarray) -> np.ndarray:
     return dets
 
 
-def _safe_tracker_update(tracker, dets, frame_bgr, idx) -> np.ndarray:
+def _sanitize_detections_for_tracker(
+    dets: np.ndarray,
+    frame_bgr: np.ndarray,
+) -> Tuple[np.ndarray, int]:
+    """Clip detector boxes to the image and drop invalid tracker crops.
+
+    Some detector/backend combinations can emit boxes that extend just outside
+    the frame, or degenerate boxes after numerical conversion. BoxMOT crops
+    those boxes before ReID; an empty crop raises inside ``cv2.resize`` and
+    drops the whole tracker update for that frame. Dropping only the invalid
+    rows keeps the valid detections alive.
+    """
+    arr = np.asarray(dets, dtype=np.float32)
+    if arr.size == 0:
+        return np.zeros((0, 6), dtype=np.float32), 0
+    if arr.ndim != 2 or arr.shape[1] < 4:
+        return np.zeros((0, 6), dtype=np.float32), int(len(arr))
+
+    out = arr.copy()
+    h, w = frame_bgr.shape[:2]
+    out[:, 0] = np.clip(out[:, 0], 0, max(0, w - 1))
+    out[:, 2] = np.clip(out[:, 2], 0, max(0, w - 1))
+    out[:, 1] = np.clip(out[:, 1], 0, max(0, h - 1))
+    out[:, 3] = np.clip(out[:, 3], 0, max(0, h - 1))
+
+    finite = np.isfinite(out[:, 0:4]).all(axis=1)
+    positive = (out[:, 2] > out[:, 0] + 1.0) & (out[:, 3] > out[:, 1] + 1.0)
+    keep = finite & positive
+    dropped = int(len(out) - int(keep.sum()))
+    out = out[keep]
+    if out.shape[1] == 4:
+        out = np.concatenate(
+            [
+                out,
+                np.ones((len(out), 1), dtype=np.float32),
+                np.zeros((len(out), 1), dtype=np.float32),
+            ],
+            axis=1,
+        )
+    return out.astype(np.float32, copy=False), dropped
+
+
+def _safe_tracker_update(tracker, dets, frame_bgr, idx, timing: Optional[dict] = None) -> np.ndarray:
+    dets = _suppress_group_boxes_for_tracker(dets, timing=timing)
+    dets, n_dropped = _sanitize_detections_for_tracker(dets, frame_bgr)
+    if n_dropped:
+        _timing_inc(timing, "tracker_input_dets_dropped", n_dropped)
+        log.debug("dropped %d invalid tracker detections at frame %d", n_dropped, idx)
     try:
         tracks_per_frame = tracker.update(dets, frame_bgr)
     except Exception as exc:
+        _timing_inc(timing, "tracker_update_failures")
         log.exception("DeepOcSort.update failed at frame %d: %s", idx, exc)
         tracks_per_frame = np.zeros((0, 7), dtype=np.float32)
     return tracks_per_frame
 
 
 def _detect_and_track_serial(
-    *, video: Path, detect, tracker, max_frames: Optional[int],
+    *, video: Path, detect, tracker, max_frames: Optional[int], detector_frames: Optional[List[FrameDetections]] = None,
+    frame_stride: int = 1, timing: Optional[dict] = None,
 ) -> List[FrameDetections]:
     out_frames: List[FrameDetections] = []
     n_processed = 0
     t0 = time.time()
-    
-    adaptive_stride = _resolve_adaptive_anchor_stride()
-    prev_gray = None
-    prev_xyxys = None
-    prev_tids = None
-    prev_confs = None
-    
-    import cv2
-
-    for idx, frame_bgr in _frame_iter(Path(video)):
+    frame_iter = iter(_frame_iter(Path(video), frame_stride=frame_stride))
+    while True:
+        decode_t0 = time.perf_counter()
+        try:
+            idx, frame_bgr = next(frame_iter)
+        except StopIteration:
+            _timing_add(timing, "tracking_decode_iter_s", time.perf_counter() - decode_t0)
+            break
+        _timing_add(timing, "tracking_decode_iter_s", time.perf_counter() - decode_t0)
+        _timing_inc(timing, "tracking_frames_decoded")
         if max_frames is not None and idx >= max_frames:
             break
-            
-        if adaptive_stride > 1:
-            gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
-            is_anchor = (idx % adaptive_stride == 0) or prev_xyxys is None or len(prev_xyxys) == 0
-            
-            if is_anchor:
-                dets = _safe_detect(detect, frame_bgr)
-                tracks_per_frame = _safe_tracker_update(tracker, dets, frame_bgr, idx)
-                _record_tracker_output(out_frames, tracks_per_frame)
-                
-                prev_gray = gray
-                if tracks_per_frame is not None and len(tracks_per_frame) > 0:
-                    arr = np.asarray(tracks_per_frame, dtype=np.float32)
-                    prev_xyxys = arr[:, 0:4].copy()
-                    prev_tids = arr[:, 4].copy()
-                    if arr.shape[1] > 5:
-                        prev_confs = arr[:, 5].copy()
-                    else:
-                        prev_confs = np.ones(len(arr), dtype=np.float32)
-                else:
-                    prev_xyxys = np.empty((0, 4), dtype=np.float32)
-                    prev_tids = np.empty((0,), dtype=np.float32)
-                    prev_confs = np.empty((0,), dtype=np.float32)
-            else:
-                good_xyxys = []
-                good_tids = []
-                good_confs = []
-                
-                for i in range(len(prev_xyxys)):
-                    x1, y1, x2, y2 = prev_xyxys[i]
-                    pts = np.array([[[x1, y1]], [[x2, y1]], [[x2, y2]], [[x1, y2]]], dtype=np.float32)
-                    next_pts, status, err = cv2.calcOpticalFlowPyrLK(
-                        prev_gray, gray, pts, None,
-                        winSize=(15, 15), maxLevel=2,
-                        criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
-                    )
-                    if next_pts is not None and status is not None and status.flatten().sum() >= 3:
-                        good_pts = next_pts[status.flatten() == 1]
-                        nx1 = float(np.min(good_pts[:, 0, 0]))
-                        ny1 = float(np.min(good_pts[:, 0, 1]))
-                        nx2 = float(np.max(good_pts[:, 0, 0]))
-                        ny2 = float(np.max(good_pts[:, 0, 1]))
-                        nx1, ny1 = max(0, nx1), max(0, ny1)
-                        good_xyxys.append([nx1, ny1, nx2, ny2])
-                        good_tids.append(prev_tids[i])
-                        good_confs.append(prev_confs[i])
-                        
-                if len(good_xyxys) > 0:
-                    prev_xyxys = np.array(good_xyxys, dtype=np.float32)
-                    prev_tids = np.array(good_tids, dtype=np.float32)
-                    prev_confs = np.array(good_confs, dtype=np.float32)
-                    
-                    pseudo = np.zeros((len(good_xyxys), 7), dtype=np.float32)
-                    pseudo[:, 0:4] = prev_xyxys
-                    pseudo[:, 4] = prev_tids
-                    pseudo[:, 5] = prev_confs
-                    _record_tracker_output(out_frames, pseudo)
-                else:
-                    prev_xyxys = np.empty((0, 4), dtype=np.float32)
-                    _record_tracker_output(out_frames, np.empty((0, 7), dtype=np.float32))
-                
-                prev_gray = gray
-        else:
-            dets = _safe_detect(detect, frame_bgr)
-            tracks_per_frame = _safe_tracker_update(tracker, dets, frame_bgr, idx)
-            _record_tracker_output(out_frames, tracks_per_frame)
-            
+        detect_t0 = time.perf_counter()
+        dets = _safe_detect(detect, frame_bgr)
+        _timing_add(timing, "detector_calls_s", time.perf_counter() - detect_t0)
+        _timing_inc(timing, "detector_calls")
+        if detector_frames is not None:
+            _record_detector_output(detector_frames, dets)
+        tracker_t0 = time.perf_counter()
+        tracks_per_frame = _safe_tracker_update(tracker, dets, frame_bgr, idx, timing)
+        _timing_add(timing, "tracker_update_calls_s", time.perf_counter() - tracker_t0)
+        _timing_inc(timing, "tracker_update_calls")
+        _record_tracker_output(out_frames, tracks_per_frame)
         n_processed += 1
-        
     dt = time.time() - t0
     log.info(
-        "%d frames in %.1fs (%.2f FPS) %s", n_processed, dt,
+        "%d frames in %.1fs (%.2f FPS)", n_processed, dt,
         n_processed / max(dt, 1e-6),
-        "[Adaptive LK-Flow Enabled]" if adaptive_stride > 1 else ""
     )
     return out_frames
 
 
 def _detect_and_track_pipelined(
-    *, video: Path, detect, tracker, max_frames: Optional[int],
+    *, video: Path, detect, tracker, max_frames: Optional[int], detector_frames: Optional[List[FrameDetections]] = None,
+    frame_stride: int = 1, timing: Optional[dict] = None,
 ) -> List[FrameDetections]:
     """One-frame look-ahead: while tracker runs on frame N, detector is
     already running on frame N+1 in a worker thread.
@@ -332,22 +462,44 @@ def _detect_and_track_pipelined(
     log.info("detect/track pipeline parallelism enabled (1-frame lookahead)")
     t0 = time.time()
 
+    def timed_detect(frame_bgr):
+        start = time.perf_counter()
+        try:
+            return _safe_detect(detect, frame_bgr)
+        finally:
+            _timing_add(timing, "detector_calls_s", time.perf_counter() - start)
+            _timing_inc(timing, "detector_calls")
+
     with ThreadPoolExecutor(max_workers=1, thread_name_prefix="det") as pool:
         prev_idx: Optional[int] = None
         prev_frame: Optional[np.ndarray] = None
         det_future = None
 
-        for idx, frame_bgr in _frame_iter(Path(video)):
+        frame_iter = iter(_frame_iter(Path(video), frame_stride=frame_stride))
+        while True:
+            decode_t0 = time.perf_counter()
+            try:
+                idx, frame_bgr = next(frame_iter)
+            except StopIteration:
+                _timing_add(timing, "tracking_decode_iter_s", time.perf_counter() - decode_t0)
+                break
+            _timing_add(timing, "tracking_decode_iter_s", time.perf_counter() - decode_t0)
+            _timing_inc(timing, "tracking_frames_decoded")
             if max_frames is not None and idx >= max_frames:
                 break
 
-            new_future = pool.submit(_safe_detect, detect, frame_bgr)
+            new_future = pool.submit(timed_detect, frame_bgr)
 
             if det_future is not None:
                 prev_dets = det_future.result()
+                if detector_frames is not None:
+                    _record_detector_output(detector_frames, prev_dets)
+                tracker_t0 = time.perf_counter()
                 tracks_per_frame = _safe_tracker_update(
-                    tracker, prev_dets, prev_frame, prev_idx,
+                    tracker, prev_dets, prev_frame, prev_idx, timing,
                 )
+                _timing_add(timing, "tracker_update_calls_s", time.perf_counter() - tracker_t0)
+                _timing_inc(timing, "tracker_update_calls")
                 _record_tracker_output(out_frames, tracks_per_frame)
                 n_processed += 1
 
@@ -357,9 +509,14 @@ def _detect_and_track_pipelined(
 
         if det_future is not None:
             prev_dets = det_future.result()
+            if detector_frames is not None:
+                _record_detector_output(detector_frames, prev_dets)
+            tracker_t0 = time.perf_counter()
             tracks_per_frame = _safe_tracker_update(
-                tracker, prev_dets, prev_frame, prev_idx,
+                tracker, prev_dets, prev_frame, prev_idx, timing,
             )
+            _timing_add(timing, "tracker_update_calls_s", time.perf_counter() - tracker_t0)
+            _timing_inc(timing, "tracker_update_calls")
             _record_tracker_output(out_frames, tracks_per_frame)
             n_processed += 1
 
@@ -378,6 +535,9 @@ def _detect_and_track(
     reid_weights: Path,
     device: str,
     max_frames: Optional[int],
+    detections_cache_path: Optional[Path] = None,
+    frame_stride: int = 1,
+    timing: Optional[dict] = None,
 ) -> List[FrameDetections]:
     """Run multi-scale YOLO + DeepOcSort over ``video`` and return
     a list of ``FrameDetections`` (one per processed frame).
@@ -385,8 +545,11 @@ def _detect_and_track(
     The output schema matches the cache format consumed by
     ``tracking.best_pipeline.build_tracks``.
     """
+    patch_t0 = time.perf_counter()
     install_kalman_jitter_patch()
+    _timing_add(timing, "kalman_patch_s", time.perf_counter() - patch_t0)
 
+    detector_t0 = time.perf_counter()
     detect = make_multi_scale_detector(
         weights=weights,
         imgsz_list=list(_resolve_imgsz_ensemble()),
@@ -397,23 +560,35 @@ def _detect_and_track(
         classes=[PERSON_CLASS_ID],
         tta_flip=_resolve_tta_flip(),
     )
+    _timing_add(timing, "detector_init_s", time.perf_counter() - detector_t0)
+    tracker_t0 = time.perf_counter()
     tracker = make_tracker(
-        reid_weights=reid_weights, device=device, half=False,
+        reid_weights=reid_weights, device=device, half=_resolve_reid_half(),
     )
+    _timing_add(timing, "tracker_init_s", time.perf_counter() - tracker_t0)
 
+    detector_frames: Optional[List[FrameDetections]] = [] if detections_cache_path is not None else None
+    loop_t0 = time.perf_counter()
     if _resolve_pipeline_parallel():
-        adaptive_stride = _resolve_adaptive_anchor_stride()
-        if adaptive_stride > 1:
-            log.warning("Pipelining is disabled because BEST_ID_ADAPTIVE_ANCHOR is enabled.")
-        else:
-            return _detect_and_track_pipelined(
-                video=video, detect=detect, tracker=tracker,
-                max_frames=max_frames,
-            )
-            
-    return _detect_and_track_serial(
-        video=video, detect=detect, tracker=tracker, max_frames=max_frames,
-    )
+        frames = _detect_and_track_pipelined(
+            video=video, detect=detect, tracker=tracker,
+            max_frames=max_frames, detector_frames=detector_frames,
+            frame_stride=frame_stride, timing=timing,
+        )
+    else:
+        frames = _detect_and_track_serial(
+            video=video, detect=detect, tracker=tracker, max_frames=max_frames,
+            detector_frames=detector_frames,
+            frame_stride=frame_stride, timing=timing,
+        )
+    _timing_add(timing, "detect_track_loop_s", time.perf_counter() - loop_t0)
+    if detections_cache_path is not None and detector_frames is not None:
+        detections_cache_path.parent.mkdir(parents=True, exist_ok=True)
+        dump_t0 = time.perf_counter()
+        joblib.dump(detector_frames, str(detections_cache_path))
+        _timing_add(timing, "detections_cache_dump_s", time.perf_counter() - dump_t0)
+        log.info("wrote detector cache: %s (%d frames)", detections_cache_path, len(detector_frames))
+    return frames
 
 
 def run_pipeline_on_video(
@@ -426,7 +601,12 @@ def run_pipeline_on_video(
     device: str = "cuda:0",
     max_frames: Optional[int] = None,
     cache_path: Optional[Path] = None,
+    detections_cache_path: Optional[Path] = None,
     force: bool = False,
+    frame_stride: int = 1,
+    timing_path: Optional[Path] = None,
+    expected_total_performers: Optional[int] = None,
+    presence_plan_path: Optional[Path] = None,
 ) -> Dict[int, Track]:
     """Run the full v8 best pipeline on ``video`` and dump tracks.pkl.
 
@@ -460,17 +640,56 @@ def run_pipeline_on_video(
     video = Path(video)
     out = Path(out)
     out.parent.mkdir(parents=True, exist_ok=True)
+    timing: Optional[dict] = None
+    if timing_path is not None:
+        timing = {
+            "video": str(video),
+            "out": str(out),
+            "device": device,
+            "frame_stride": int(frame_stride),
+            "expected_total_performers": (
+                int(expected_total_performers)
+                if expected_total_performers is not None
+                else None
+            ),
+            "cache_hit": False,
+            "pipeline_parallel": _resolve_pipeline_parallel(),
+            "prefetch_depth": _resolve_prefetch_depth(),
+            "detector": {
+                "weights": str(weights),
+                "imgsz_ensemble": list(_resolve_imgsz_ensemble()),
+                "ensemble_iou": _resolve_ensemble_iou(),
+                "tta_flip": _resolve_tta_flip(),
+                "conf": DETECTOR_CONF,
+                "iou": DETECTOR_IOU,
+                "yolo_half": _env_bool("BEST_ID_YOLO_HALF", False),
+            },
+            "tracker": {
+                "reid_half": _resolve_reid_half(),
+                "env_overrides": {
+                    k: v for k, v in sorted(os.environ.items())
+                    if k.startswith("BEST_ID_DEEPOCSORT_")
+                    or k.startswith("BEST_ID_TRACKER_")
+                },
+            },
+        }
+    total_t0 = time.perf_counter()
     if cache_path is None:
         cache_path = out.with_suffix(out.suffix + ".cache.pkl")
     cache_path = Path(cache_path)
 
     if cache_path.is_file() and not force:
         log.info("cache hit: %s", cache_path)
+        if timing is not None:
+            timing["cache_hit"] = True
     else:
         log.info("running detector + tracker on %s -> %s", video, cache_path)
         frames = _detect_and_track(
             video=video, weights=weights, reid_weights=reid_weights,
             device=device, max_frames=max_frames,
+            detections_cache_path=detections_cache_path,
+            frame_stride=frame_stride,
+            timing=timing,
         )
         # Optional FN-recovery pass (env-gated; no-op when disabled).
         from tracking import fn_recovery
@@ -487,7 +706,9 @@ def run_pipeline_on_video(
             n_dropped = sam2_verifier.verify_cache(frames, video=video)
             log.info("sam-verify dropped %d phantom detections", n_dropped)
         cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_dump_t0 = time.perf_counter()
         joblib.dump(frames, str(cache_path))
+        _timing_add(timing, "tracking_cache_dump_s", time.perf_counter() - cache_dump_t0)
         log.info("wrote cache: %s (%d frames)", cache_path, len(frames))
         sidecar = cache_path.with_suffix(cache_path.suffix + ".video.json")
         try:
@@ -499,10 +720,21 @@ def run_pipeline_on_video(
             log.warning("could not write video sidecar %s: %s", sidecar, exc)
 
     log.info("building tracks from cache: %s", cache_path)
+    post_t0 = time.perf_counter()
     tracks = build_tracks(
-        cache_path=cache_path, cfg_path=Path(cfg), save_to=out,
+        cache_path=cache_path,
+        cfg_path=Path(cfg),
+        save_to=out,
+        expected_total_performers=expected_total_performers,
+        presence_plan_path=presence_plan_path,
     )
+    _timing_add(timing, "postprocess_build_tracks_s", time.perf_counter() - post_t0)
     log.info("wrote %s (%d tracks)", out, len(tracks))
+    if timing is not None:
+        timing["n_tracks"] = len(tracks)
+        timing["cache_path"] = str(cache_path)
+        timing["total_run_pipeline_s"] = round(time.perf_counter() - total_t0, 6)
+        _write_timing_json(Path(timing_path), timing)
     return tracks
 
 
@@ -532,9 +764,18 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p.add_argument("--cache", type=Path, default=None,
                    help="Optional explicit cache path; default is "
                         "<out>.cache.pkl.")
+    p.add_argument("--detections-cache", type=Path, default=None,
+                   help="Optional path for raw detector boxes before "
+                        "DeepOcSort association.")
     p.add_argument("--force", action="store_true",
                    help="Re-run YOLO + DeepOcSort even if a cache "
                         "exists on disk.")
+    p.add_argument("--timing-json", type=Path, default=None,
+                   help="Write detector/tracker/postprocess timing JSON.")
+    p.add_argument("--expected-total-performers", type=int, default=None,
+                   help="Optional total unique target performer count prior.")
+    p.add_argument("--presence-plan", type=Path, default=None,
+                   help="Optional path for the expected-count presence plan JSON.")
     p.add_argument("--log-level", default="INFO",
                    help="Python logging level (default INFO).")
     return p.parse_args(argv)
@@ -555,7 +796,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         device=args.device,
         max_frames=args.max_frames,
         cache_path=args.cache,
+        detections_cache_path=args.detections_cache,
         force=args.force,
+        timing_path=args.timing_json,
+        expected_total_performers=args.expected_total_performers,
+        presence_plan_path=args.presence_plan,
     )
     return 0
 

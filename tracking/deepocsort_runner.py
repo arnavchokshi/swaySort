@@ -25,6 +25,8 @@ Public API:
 from __future__ import annotations
 
 import logging
+import os
+import inspect
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -130,15 +132,67 @@ def _resolve_deepocsort_class():
     )
 
 
+def _env_float(name: str) -> Optional[float]:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        log.warning("%s=%r not float; ignoring", name, raw)
+        return None
+
+
+def _env_int(name: str) -> Optional[int]:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        log.warning("%s=%r not int; ignoring", name, raw)
+        return None
+
+
+def _maybe_set_kw(
+    kw: Dict[str, object],
+    params: Dict[str, inspect.Parameter],
+    *,
+    accepts_kwargs: bool,
+    key: str,
+    env: str,
+    cast,
+) -> None:
+    if key not in params and not accepts_kwargs:
+        return
+    value = cast(env)
+    if value is not None:
+        kw[key] = value
+
+
+def _env_bool_override(name: str) -> Optional[bool]:
+    raw = os.environ.get(name, "").strip().lower()
+    if not raw:
+        return None
+    if raw in {"1", "true", "yes", "on"}:
+        return True
+    if raw in {"0", "false", "no", "off"}:
+        return False
+    log.warning("%s=%r not bool; ignoring", name, raw)
+    return None
+
+
 def make_tracker(*, reid_weights: Path, device: str, half: bool = False):
     """Construct a DeepOcSort instance with version-tolerant kwargs."""
     install_kalman_jitter_patch()
-    import inspect
     import torch
 
     cls = _resolve_deepocsort_class()
     sig = inspect.signature(cls.__init__)
     params = sig.parameters
+    accepts_kwargs = any(
+        p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()
+    )
 
     if str(device).startswith("cuda") and torch.cuda.is_available():
         torch_device = torch.device(device if ":" in str(device) else "cuda")
@@ -161,11 +215,78 @@ def make_tracker(*, reid_weights: Path, device: str, half: bool = False):
     if "det_thresh" in params and "det_thresh" not in kw:
         default = params["det_thresh"].default
         kw["det_thresh"] = default if default is not inspect.Parameter.empty else 0.3
+    _maybe_set_kw(
+        kw, params, accepts_kwargs=accepts_kwargs,
+        key="det_thresh", env="BEST_ID_TRACKER_DET_THRESH", cast=_env_float,
+    )
+    _maybe_set_kw(
+        kw, params, accepts_kwargs=accepts_kwargs,
+        key="max_age", env="BEST_ID_TRACKER_MAX_AGE", cast=_env_int,
+    )
+    _maybe_set_kw(
+        kw, params, accepts_kwargs=accepts_kwargs,
+        key="min_hits", env="BEST_ID_TRACKER_MIN_HITS", cast=_env_int,
+    )
+    _maybe_set_kw(
+        kw, params, accepts_kwargs=accepts_kwargs,
+        key="iou_threshold", env="BEST_ID_TRACKER_IOU_THRESHOLD", cast=_env_float,
+    )
+    _maybe_set_kw(
+        kw, params, accepts_kwargs=accepts_kwargs,
+        key="delta_t", env="BEST_ID_DEEPOCSORT_DELTA_T", cast=_env_int,
+    )
+    _maybe_set_kw(
+        kw, params, accepts_kwargs=accepts_kwargs,
+        key="inertia", env="BEST_ID_DEEPOCSORT_INERTIA", cast=_env_float,
+    )
+    _maybe_set_kw(
+        kw, params, accepts_kwargs=accepts_kwargs,
+        key="w_association_emb", env="BEST_ID_DEEPOCSORT_W_ASSOCIATION_EMB",
+        cast=_env_float,
+    )
+    _maybe_set_kw(
+        kw, params, accepts_kwargs=accepts_kwargs,
+        key="alpha_fixed_emb", env="BEST_ID_DEEPOCSORT_ALPHA_FIXED_EMB",
+        cast=_env_float,
+    )
+    _maybe_set_kw(
+        kw, params, accepts_kwargs=accepts_kwargs,
+        key="aw_param", env="BEST_ID_DEEPOCSORT_AW_PARAM", cast=_env_float,
+    )
+    _maybe_set_kw(
+        kw, params, accepts_kwargs=accepts_kwargs,
+        key="Q_xy_scaling", env="BEST_ID_DEEPOCSORT_Q_XY_SCALING",
+        cast=_env_float,
+    )
+    _maybe_set_kw(
+        kw, params, accepts_kwargs=accepts_kwargs,
+        key="Q_s_scaling", env="BEST_ID_DEEPOCSORT_Q_S_SCALING",
+        cast=_env_float,
+    )
+    for key, env in (
+        ("embedding_off", "BEST_ID_DEEPOCSORT_EMBEDDING_OFF"),
+        ("cmc_off", "BEST_ID_DEEPOCSORT_CMC_OFF"),
+        ("aw_off", "BEST_ID_DEEPOCSORT_AW_OFF"),
+    ):
+        if key in params or accepts_kwargs:
+            value = _env_bool_override(env)
+            if value is not None:
+                kw[key] = value
     return cls(**kw)
 
 
-def iter_video_frames(video: Path):
-    """Yield (idx, frame_bgr) for either a video file or a directory of frames."""
+def iter_video_frames(video: Path, *, frame_stride: int = 1):
+    """Yield (idx, frame_bgr) for either a video file or a directory of frames.
+
+    ``frame_stride`` (default ``1``) keeps every Nth source frame and
+    renumbers the yielded ``idx`` to the dense kept-frame index (so the
+    consumer never sees holes).  This is what lets workstream B run the
+    tracker on a 60 fps source as if it were a 30 fps source — the
+    tracker, the on-disk frame extractor and the body4d input all walk
+    the same dense index space.  ``stride=1`` (the default) is a no-op
+    that exactly matches the legacy behaviour.
+    """
+    stride = max(1, int(frame_stride))
     if video.is_dir():
         exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
         paths = sorted(
@@ -174,11 +295,15 @@ def iter_video_frames(video: Path):
         )
         if not paths:
             raise FileNotFoundError(f"No frames in {video}")
+        kept = 0
         for i, p in enumerate(paths):
+            if (i % stride) != 0:
+                continue
             frame = cv2.imread(str(p), cv2.IMREAD_COLOR)
             if frame is None:
                 raise RuntimeError(f"Could not read {p}")
-            yield i, frame
+            yield kept, frame
+            kept += 1
         return
 
     cap = cv2.VideoCapture(str(video))
@@ -186,17 +311,22 @@ def iter_video_frames(video: Path):
         raise FileNotFoundError(f"Could not open {video}")
     try:
         i = 0
+        kept = 0
         while True:
             ok, frame = cap.read()
             if not ok or frame is None:
                 break
-            yield i, frame
+            if (i % stride) == 0:
+                yield kept, frame
+                kept += 1
             i += 1
     finally:
         cap.release()
 
 
-def iter_video_frames_prefetched(video: Path, queue_size: int = 4):
+def iter_video_frames_prefetched(
+    video: Path, queue_size: int = 4, *, frame_stride: int = 1
+):
     """Same contract as ``iter_video_frames`` but decodes ahead in a
     background thread.
 
@@ -213,7 +343,7 @@ def iter_video_frames_prefetched(video: Path, queue_size: int = 4):
             to the synchronous iterator.
     """
     if queue_size <= 0:
-        yield from iter_video_frames(video)
+        yield from iter_video_frames(video, frame_stride=frame_stride)
         return
 
     import queue
@@ -225,7 +355,7 @@ def iter_video_frames_prefetched(video: Path, queue_size: int = 4):
 
     def _producer():
         try:
-            for item in iter_video_frames(video):
+            for item in iter_video_frames(video, frame_stride=frame_stride):
                 if stop.is_set():
                     return
                 # Bounded put -- if the consumer is slow, block until

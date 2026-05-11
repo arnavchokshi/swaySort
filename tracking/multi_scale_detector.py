@@ -49,6 +49,11 @@ def _resolve_gpu_nms_flag(explicit: Optional[bool]) -> bool:
     return raw in {"1", "true", "yes", "on"}
 
 
+def _resolve_yolo_half_flag() -> bool:
+    raw = os.environ.get("BEST_ID_YOLO_HALF", "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
 def _resolve_trt_engines(
     weights: Path, sorted_imgsz: List[int],
 ) -> Optional[dict]:
@@ -141,6 +146,7 @@ def make_multi_scale_detector(
 
     sorted_imgsz = sorted({int(s) for s in imgsz_list})
     use_gpu_nms = _resolve_gpu_nms_flag(gpu_nms)
+    use_yolo_half = _resolve_yolo_half_flag()
 
     # One model per scale. With .pt all scales share a single YOLO
     # instance (fully dynamic). With TensorRT each scale needs its own
@@ -158,9 +164,9 @@ def make_multi_scale_detector(
 
     log.info("multi-scale detector: weights=%s imgsz=%s conf=%.3f iou=%.3f "
              "ensemble_iou=%.2f device=%s classes=%s tta_flip=%s gpu_nms=%s "
-             "backend=%s",
+             "yolo_half=%s backend=%s",
              weights, sorted_imgsz, conf, iou, ensemble_iou, device, classes,
-             tta_flip, use_gpu_nms, backend)
+             tta_flip, use_gpu_nms, use_yolo_half, backend)
 
     # Lazy import to keep the dark-recovery module optional.
     from tracking.dark_recovery import (
@@ -184,6 +190,7 @@ def make_multi_scale_detector(
                 results = model.predict(
                     view, imgsz=int(imgsz), conf=eff_conf, iou=iou,
                     device=device, verbose=False, classes=classes,
+                    half=use_yolo_half,
                 )
                 if results:
                     boxes = results[0].boxes
@@ -205,6 +212,7 @@ def make_multi_scale_detector(
                     results_f = model.predict(
                         flipped, imgsz=int(imgsz), conf=eff_conf, iou=iou,
                         device=device, verbose=False, classes=classes,
+                        half=use_yolo_half,
                     )
                     if results_f:
                         boxes_f = results_f[0].boxes
@@ -280,6 +288,7 @@ def make_multi_scale_detector(
                 results = model.predict(
                     view, imgsz=int(imgsz), conf=eff_conf, iou=iou,
                     device=device, verbose=False, classes=classes,
+                    half=use_yolo_half,
                 )
                 if results:
                     boxes = results[0].boxes
@@ -293,6 +302,7 @@ def make_multi_scale_detector(
                     results_f = model.predict(
                         flipped, imgsz=int(imgsz), conf=eff_conf, iou=iou,
                         device=device, verbose=False, classes=classes,
+                        half=use_yolo_half,
                     )
                     if results_f:
                         boxes_f = results_f[0].boxes

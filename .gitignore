@@ -23,3 +23,6 @@ configs/clips.json
 
 # Background-job pid files dropped by long-running scripts
 *.pid
+
+# Local pipeline outputs, demos, caches, and rendered videos
+work/
